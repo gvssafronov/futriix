@@ -1,0 +1,11 @@
+{
+    "name": "simple_engine",
+    "version": "1.0.0",
+    "author": "Futriix Team",
+    "description": "Simple in-memory key-value storage engine plugin",
+    "api_version": "1.0",
+    "engine_type": "simple_kv",
+    "dependencies": [],
+    "created_at": 1704067200000,
+    "updated_at": 1704067200000
+}
