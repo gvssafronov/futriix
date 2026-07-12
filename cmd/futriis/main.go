@@ -85,7 +85,7 @@ func main() {
     aclManager := acl.NewACLManager()
     logger.Info("ACL manager initialized")
 
-    // Исправлено: передаём store как второй аргумент
+    // Передаём store как второй аргумент
     raftCoordinator, err := cluster.NewRaftCoordinator(cfg, store, logger)
     if err != nil {
         logger.Error("Failed to start Raft coordinator: " + err.Error())
@@ -93,7 +93,7 @@ func main() {
         os.Exit(1)
     }
 
-    // ========== НОВАЯ ФУНКЦИОНАЛЬНОСТЬ: Проверка статуса миграций схемы данных ==========
+    // ========== Проверка статуса миграций схемы данных ==========
     if raftCoordinator != nil {
         schemaMigrator := raftCoordinator.GetSchemaMigrator()
         if schemaMigrator != nil {
@@ -124,7 +124,7 @@ func main() {
             logger.Warn("Schema migrator not available")
         }
         
-        // ========== НОВАЯ ФУНКЦИОНАЛЬНОСТЬ: Проверка статуса Fallback менеджера ==========
+        // ========== Проверка статуса Fallback менеджера ==========
         fallbackMgr := raftCoordinator.GetFallbackManager()
         if fallbackMgr != nil {
             logger.Info("Leader fallback manager is active (Single Point of Failure protection enabled)")
@@ -134,7 +134,7 @@ func main() {
             logger.Warn("Leader fallback manager not available")
         }
         
-        // ========== НОВАЯ ФУНКЦИОНАЛЬНОСТЬ: Проверка статуса Panic Recovery менеджера ==========
+        // ========== Проверка статуса Panic Recovery менеджера ==========
         panicRecoveryMgr := raftCoordinator.GetPanicRecoveryManager()
         if panicRecoveryMgr != nil {
             logger.Info("Panic recovery manager is active (automatic goroutine recovery enabled)")
@@ -144,7 +144,7 @@ func main() {
             logger.Warn("Panic recovery manager not available")
         }
         
-        // ========== НОВАЯ ФУНКЦИОНАЛЬНОСТЬ: Проверка статуса Persistence менеджера ==========
+        // ========== Проверка статуса Persistence менеджера ==========
         persistenceMgr := raftCoordinator.GetPersistenceManager()
         if persistenceMgr != nil {
             logger.Info("Persistence manager is active (automatic data persistence enabled)")
@@ -165,7 +165,7 @@ func main() {
 
     node := cluster.NewNode(cfg.Cluster.NodeIP, cfg.Cluster.NodePort, store, logger)
     
-    // Исправлено: объявляем переменную maxRetries здесь, чтобы она была доступна
+    // Объявляем переменную maxRetries здесь, чтобы она была доступна
     maxRetries := 5
     var registerErr error
     for i := 0; i < maxRetries; i++ {
@@ -185,7 +185,7 @@ func main() {
         os.Exit(1)
     }
 
-    // Исправлено: передаём отдельные параметры из конфигурации плагинов
+    // Передаём отдельные параметры из конфигурации плагинов
     pluginManager := plugin.NewPluginManager(
         cfg.Plugins.ScriptDir,
         logger,
@@ -234,7 +234,7 @@ func main() {
         logger.Info("Cluster features enabled: Pipeline Replication, Batch Commit, Dynamic Resharding, Joint Consensus")
         logger.Info("Observability metrics and health checks available at /api/webui/metrics and /api/webui/health")
         
-        // ========== НОВАЯ ФУНКЦИОНАЛЬНОСТЬ: Вывод информации о новых компонентах ==========
+        // ========== Вывод информации о новых компонентах ==========
         logger.Info("Additional features:")
         logger.Info("  - Single Point of Failure protection (Leader Fallback) - ENABLED")
         logger.Info("  - Automatic Panic Recovery for goroutines - ENABLED")
@@ -258,12 +258,12 @@ func main() {
         utils.Println("\nReceived shutdown signal, starting graceful shutdown...")
         logger.Info("Received shutdown signal, starting graceful shutdown...")
         
-        // 1. Останавливаем REPL
+        // Останавливаем REPL
         logger.Info("Stopping REPL...")
         replInstance.Close()
         logger.Info("REPL stopped")
         
-        // 2. Останавливаем HTTP сервер с таймаутом
+        // Останавливаем HTTP сервер с таймаутом
         logger.Info("Stopping HTTP server...")
         shutdownCtx, shutdownCancel := context.WithTimeout(context.Background(), 30*time.Second)
         defer shutdownCancel()
@@ -283,7 +283,7 @@ func main() {
             logger.Warn("HTTP server shutdown timeout")
         }
         
-        // 3. Останавливаем WebUI
+        // Останавливаем WebUI
         logger.Info("Stopping WebUI...")
         webUIStopDone := make(chan struct{})
         go func() {
@@ -300,7 +300,7 @@ func main() {
             logger.Warn("WebUI shutdown timeout")
         }
         
-        // 4. Останавливаем плагины
+        // Останавливаем плагины
         if cfg.Plugins.Enabled && pluginManager != nil {
             logger.Info("Stopping plugins...")
             plugins := pluginManager.ListPlugins()
@@ -322,7 +322,7 @@ func main() {
             }
         }
         
-        // 5. Сохраняем данные на диск
+        // Сохраняем данные на диск
         logger.Info("Persisting data to disk...")
         persistDone := make(chan struct{})
         go func() {
@@ -347,7 +347,7 @@ func main() {
             logger.Warn("Persistence timeout")
         }
         
-        // 6. Останавливаем координатор
+        // Останавливаем координатор
         logger.Info("Stopping Raft coordinator...")
         raftStopDone := make(chan struct{})
         go func() {
@@ -362,7 +362,7 @@ func main() {
             logger.Warn("Raft coordinator shutdown timeout")
         }
         
-        // 7. Останавливаем узел
+        // Останавливаем узел
         logger.Info("Stopping cluster node...")
         nodeStopDone := make(chan struct{})
         go func() {
@@ -377,7 +377,7 @@ func main() {
             logger.Warn("Node shutdown timeout")
         }
         
-        // 8. Синхронизируем и закрываем логгер
+        // Синхронизируем и закрываем логгер
         logger.Info("Finalizing logger...")
         if err := logger.Sync(); err != nil {
             fmt.Printf("Failed to sync logger: %v\n", err)
@@ -413,7 +413,7 @@ func displayBanner(clusterName string, webUIEnabled bool, webUIPort int, httpPor
         bannerLines = append(bannerLines, "                Observability endpoints: /api/webui/metrics, /api/webui/health")
     }
     
-    // ========== НОВАЯ ФУНКЦИОНАЛЬНОСТЬ: Добавляем информацию о новых компонентах в баннер ==========
+    // ========== Добавляем информацию о новых компонентах в баннер ==========
     bannerLines = append(bannerLines, "                Additional features:")
     bannerLines = append(bannerLines, "                  - Single Point of Failure protection (Leader Fallback)")
     bannerLines = append(bannerLines, "                  - Automatic Panic Recovery for goroutines")
