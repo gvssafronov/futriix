@@ -30,7 +30,7 @@
 <!-- TABLE OF CONTENTS -->
 <br>
 <!-- <details> -->
-  <b>Содержание</b>
+  <h3><b>Содержание</b></h3>
   <br>
   <br>
   <ol>
