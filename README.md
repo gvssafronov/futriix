@@ -48,9 +48,9 @@
     <li><a href="#кластеризация-и-шардинг">Кластеризация и шардинг</a></li>
     <li><a href="#ограничения">Ограничения</a></li>
     <li><a href="#импорт-экспорт">Импорт-Экспорт</a></li>
-    <li><a href="#lua-плагины">Lua-плагины</a></li>
-    <li><a href="#контроль-доступа">Контроль доступа</a></li>
     <li><a href="#http-api">HTTP API</a></li>
+    <li><a href="#контроль-доступа">Контроль доступа</a></li>
+    <li><a href="#lua-плагины">Lua-плагины</a></li>
     <li><a href="#триггеры">Триггеры</a></li>
     <li><a href="#сжатие-данных">Сжатие данных</a></li>
     <li><a href="#графический-интерфейс">Графический интерфейс</a></li>
@@ -1263,6 +1263,101 @@ Created database 'company_restore'
 
 <p align="right">(<a href="#readme-top">К началу</a>)</p>
 
+## HTTP API
+
+ СУБД Futriix предусмотрен удобный сетевой интерфейс для интеграции с веб‑приложениями — это RESTful API, который покрывает все основные операции над данными и служебными объектами системы.
+
+ API спроектирован с учётом требований современной веб‑разработки:
+
+  * Поддержка CORS позволяет выполнять запросы к СУБД из браузерных приложений, размещённых на других доменах, без проблем с политикой безопасности браузеров. <br>
+  * Аутентификация по X‑Session‑ID даёт простой и надёжный механизм управления сессиями: клиент получает идентификатор сессии после авторизации, а затем передаёт его в заголовке X-Session-ID для подтверждения прав на выполнение операций. Такой подход хорошо ложится на привычные схемы работы с сессионными токенами и легко встраивается в существующие стеки.<br>
+
+  * **Доступны следующие группы endpoints, каждая из которых отвечает за свою область управления:**
+
+  * **CRUD‑операции над коллекциями** `(/api/db/{db}/{collection})` — полный набор действий для работы с данными: создание, чтение, обновление и удаление документов. Шаблоны URL позволяют адресовать конкретную базу данных и коллекцию, что удобно при мультитенантной архитектуре или при работе с несколькими логическими пространствами данных.
+
+  * **Управление индексами** `(/api/index/)` — инструменты для создания, изменения и удаления индексов, чтобы гибко настраивать производительность выборки под разные типы запросов.
+
+  * **Контроль доступа (ACL)** `(/api/acl/)` — настройка правил доступа к объектам СУБД: можно разграничивать права на уровне баз, коллекций, отдельных операций или даже по условиям над данными.
+
+  * **Работа с ограничениями** `(/api/constraint/)` — управление декларативными ограничениями целостности (например, enum‑списками, диапазонами, уникальностью и т. п.), которые помогают поддерживать корректность данных на уровне СУБД.
+
+  * **Администрирование кластера** `(/api/cluster/)` — операции по управлению топологией кластера: добавление и удаление узлов, перераспределение шардов, мониторинг состояния реплик и консенсуса (в том числе на базе Raft). Это особенно важно при динамическом масштабировании и обслуживании распределённой системы.
+
+```sh
+# Аутентификация
+curl -X POST http://localhost:8080/api/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"username":"admin","password":"admin"}'
+# Response: {"success":true,"data":{"session_id":"abc123"}}
+
+# Вставка документа
+curl -X POST http://localhost:8080/api/db/company/employees \
+  -H "Content-Type: application/json" \
+  -H "X-Session-ID: abc123" \
+  -d '{"name":"API User","position":"Integrator","age":28}'
+# Response: {"success":true,"data":{"status":"inserted"}}
+
+# Получение документа по ID
+curl -X GET "http://localhost:8080/api/db/company/employees/550e8400-e29b-41d4-a716-446655440000" \
+  -H "X-Session-ID: abc123"
+# Response: {"success":true,"data":{"_id":"550e8400-...","fields":{...}}}
+
+# Получение всех документов с пагинацией
+curl -X GET "http://localhost:8080/api/db/company/employees?limit=10&offset=0" \
+  -H "X-Session-ID: abc123"
+
+# Поиск по индексу
+curl -X GET "http://localhost:8080/api/db/company/employees?index=name_idx&value=John%20Doe" \
+  -H "X-Session-ID: abc123"
+
+# Обновление документа
+curl -X PUT http://localhost:8080/api/db/company/employees/550e8400-e29b-41d4-a716-446655440000 \
+  -H "Content-Type: application/json" \
+  -H "X-Session-ID: abc123" \
+  -d '{"age":31,"position":"Senior Developer"}'
+# Response: {"success":true,"data":{"status":"updated"}}
+
+# Удаление документа
+curl -X DELETE "http://localhost:8080/api/db/company/employees/550e8400-e29b-41d4-a716-446655440000" \
+  -H "X-Session-ID: abc123"
+# Response: {"success":true,"data":{"status":"deleted"}}
+
+# Создание индекса через API
+curl -X POST http://localhost:8080/api/index/company/employees/create \
+  -H "Content-Type: application/json" \
+  -H "X-Session-ID: abc123" \
+  -d '{"name":"email_idx","fields":["email"],"unique":true}'
+
+# Просмотр индексов
+curl -X GET "http://localhost:8080/api/index/company/employees/list" \
+  -H "X-Session-ID: abc123"
+
+# Статус кластера через API
+curl -X GET "http://localhost:8080/api/cluster/status" \
+  -H "X-Session-ID: abc123"
+
+# Создание пользователя через API
+curl -X POST http://localhost:8080/api/acl/user/newuser \
+  -H "Content-Type: application/json" \
+  -H "X-Session-ID: abc123" \
+  -d '{"password":"secret","roles":["reader"]}'
+
+# Назначение прав через API
+curl -X POST "http://localhost:8080/api/acl/grant/reader/rw" \
+  -H "X-Session-ID: abc123"
+
+# Создание триггера через API
+curl -X POST http://localhost:8080/api/trigger/company/employees/create \
+  -H "Content-Type: application/json" \
+  -H "X-Session-ID: abc123" \
+  -d '{"name":"audit","event":"AFTER_INSERT","action":"log"}'
+```
+
+<p align="right">(<a href="#readme-top">К началу</a>)</p>
+
+
+
 ## Lua-плагины
 
 Для расширения функциональных возможностей субд **без изменения её исходного кода**, в futriix была реализована система расширения функциональности через Lua-скрипты с изолированным окружением. Плагины имеют доступ к БД, транзакциям, триггерам, могут логировать события и взаимодействовать через событийную шину, а также они доступны в веб-интерфейсе.
@@ -1645,96 +1740,342 @@ futriix:~> acl grant employees admin rwda
 <p align="right">(<a href="#readme-top">К началу</a>)</p>
 
 
-## HTTP API
+## Lua-плагины
 
- СУБД Futriix предусмотрен удобный сетевой интерфейс для интеграции с веб‑приложениями — это RESTful API, который покрывает все основные операции над данными и служебными объектами системы.
-
- API спроектирован с учётом требований современной веб‑разработки:
-
-  * Поддержка CORS позволяет выполнять запросы к СУБД из браузерных приложений, размещённых на других доменах, без проблем с политикой безопасности браузеров. <br>
-  * Аутентификация по X‑Session‑ID даёт простой и надёжный механизм управления сессиями: клиент получает идентификатор сессии после авторизации, а затем передаёт его в заголовке X-Session-ID для подтверждения прав на выполнение операций. Такой подход хорошо ложится на привычные схемы работы с сессионными токенами и легко встраивается в существующие стеки.<br>
-
-  * **Доступны следующие группы endpoints, каждая из которых отвечает за свою область управления:**
-
-  * **CRUD‑операции над коллекциями** `(/api/db/{db}/{collection})` — полный набор действий для работы с данными: создание, чтение, обновление и удаление документов. Шаблоны URL позволяют адресовать конкретную базу данных и коллекцию, что удобно при мультитенантной архитектуре или при работе с несколькими логическими пространствами данных.
-
-  * **Управление индексами** `(/api/index/)` — инструменты для создания, изменения и удаления индексов, чтобы гибко настраивать производительность выборки под разные типы запросов.
-
-  * **Контроль доступа (ACL)** `(/api/acl/)` — настройка правил доступа к объектам СУБД: можно разграничивать права на уровне баз, коллекций, отдельных операций или даже по условиям над данными.
-
-  * **Работа с ограничениями** `(/api/constraint/)` — управление декларативными ограничениями целостности (например, enum‑списками, диапазонами, уникальностью и т. п.), которые помогают поддерживать корректность данных на уровне СУБД.
-
-  * **Администрирование кластера** `(/api/cluster/)` — операции по управлению топологией кластера: добавление и удаление узлов, перераспределение шардов, мониторинг состояния реплик и консенсуса (в том числе на базе Raft). Это особенно важно при динамическом масштабировании и обслуживании распределённой системы.
+Для расширения функциональных возможностей субд **без изменения её исходного кода**, в futriix была реализована система расширения функциональности через Lua-скрипты с изолированным окружением. Плагины имеют доступ к БД, транзакциям, триггерам, могут логировать события и взаимодействовать через событийную шину, а также они доступны в веб-интерфейсе.
+А кроме того плагины могут использоваться для написания движков для субд, без изменения её исходного кода, на языке lua.
 
 ```sh
-# Аутентификация
-curl -X POST http://localhost:8080/api/auth/login \
-  -H "Content-Type: application/json" \
-  -d '{"username":"admin","password":"admin"}'
-# Response: {"success":true,"data":{"session_id":"abc123"}}
+# Просмотр информации о системе плагинов
+futriix:~> plugin status
+=== Plugin System Status ===
+  Enabled: true
+  Plugins Directory: ./plugins
+  Loaded Plugins: 3
+  Total Executions: 125
 
-# Вставка документа
-curl -X POST http://localhost:8080/api/db/company/employees \
-  -H "Content-Type: application/json" \
-  -H "X-Session-ID: abc123" \
-  -d '{"name":"API User","position":"Integrator","age":28}'
-# Response: {"success":true,"data":{"status":"inserted"}}
+# Список загруженных плагинов
+futriix:~> plugin list
+=== Loaded Plugins ===
+  validation (v1.0.0) by admin - Document validation rules
+     Status: RUNNING
+  audit (v2.1.0) by security - Audit trail logger
+     Status: RUNNING
+  notify (v1.2.0) by devops - Email and webhook notifications
+     Status: RUNNING
 
-# Получение документа по ID
-curl -X GET "http://localhost:8080/api/db/company/employees/550e8400-e29b-41d4-a716-446655440000" \
-  -H "X-Session-ID: abc123"
-# Response: {"success":true,"data":{"_id":"550e8400-...","fields":{...}}}
+# Загрузка плагина из файла
+futriix:~> plugin load email_notifier ./plugins/email_notifier.lua
+✓ Plugin 'email_notifier' loaded successfully
+  Version: 1.0.0
+  Author: admin
+  Description: Send email notifications on database events
 
-# Получение всех документов с пагинацией
-curl -X GET "http://localhost:8080/api/db/company/employees?limit=10&offset=0" \
-  -H "X-Session-ID: abc123"
+# Запуск/остановка плагина
+futriix:~> plugin start email_notifier
+✓ Plugin 'email_notifier' started
 
-# Поиск по индексу
-curl -X GET "http://localhost:8080/api/db/company/employees?index=name_idx&value=John%20Doe" \
-  -H "X-Session-ID: abc123"
+futriix:~> plugin stop email_notifier
+✓ Plugin 'email_notifier' stopped
 
-# Обновление документа
-curl -X PUT http://localhost:8080/api/db/company/employees/550e8400-e29b-41d4-a716-446655440000 \
-  -H "Content-Type: application/json" \
-  -H "X-Session-ID: abc123" \
-  -d '{"age":31,"position":"Senior Developer"}'
-# Response: {"success":true,"data":{"status":"updated"}}
-
-# Удаление документа
-curl -X DELETE "http://localhost:8080/api/db/company/employees/550e8400-e29b-41d4-a716-446655440000" \
-  -H "X-Session-ID: abc123"
-# Response: {"success":true,"data":{"status":"deleted"}}
-
-# Создание индекса через API
-curl -X POST http://localhost:8080/api/index/company/employees/create \
-  -H "Content-Type: application/json" \
-  -H "X-Session-ID: abc123" \
-  -d '{"name":"email_idx","fields":["email"],"unique":true}'
-
-# Просмотр индексов
-curl -X GET "http://localhost:8080/api/index/company/employees/list" \
-  -H "X-Session-ID: abc123"
-
-# Статус кластера через API
-curl -X GET "http://localhost:8080/api/cluster/status" \
-  -H "X-Session-ID: abc123"
-
-# Создание пользователя через API
-curl -X POST http://localhost:8080/api/acl/user/newuser \
-  -H "Content-Type: application/json" \
-  -H "X-Session-ID: abc123" \
-  -d '{"password":"secret","roles":["reader"]}'
-
-# Назначение прав через API
-curl -X POST "http://localhost:8080/api/acl/grant/reader/rw" \
-  -H "X-Session-ID: abc123"
-
-# Создание триггера через API
-curl -X POST http://localhost:8080/api/trigger/company/employees/create \
-  -H "Content-Type: application/json" \
-  -H "X-Session-ID: abc123" \
-  -d '{"name":"audit","event":"AFTER_INSERT","action":"log"}'
+# Выгрузка плагина
+futriix:~> plugin unload email_notifier
+✓ Plugin 'email_notifier' unloaded
 ```
+
+**Пример плагина валидации документов**
+
+В директорию `plugins` добавляем файл `validation.lua`, следдующего содержания:
+
+```sh
+-- Метаданные плагина
+version = "1.0.0"
+author = "admin"
+description = "Document validation rules for employees collection"
+
+-- Функция инициализации
+function on_load()
+    plugin_log("info", "Validation plugin loaded")
+    return true
+end
+
+-- Функция запуска
+function on_start()
+    plugin_log("info", "Validation plugin started")
+    return true
+end
+
+-- Функция остановки
+function on_stop()
+    plugin_log("info", "Validation plugin stopped")
+    return true
+end
+
+-- Функция выгрузки
+function on_unload()
+    plugin_log("info", "Validation plugin unloaded")
+    return true
+end
+
+-- Обработчик событий
+function on_event(event)
+    plugin_log("debug", "Received event: " .. event.type)
+    
+    if event.type == "BEFORE_INSERT" then
+        return validate_document(event.data)
+    end
+    
+    return true
+end
+
+-- Функция валидации документа
+function validate_document(doc)
+    -- Проверка обязательных полей
+    if doc.name == nil or doc.name == "" then
+        plugin_log("error", "Document missing required field: name")
+        return false, "Field 'name' is required"
+    end
+    
+    -- Проверка возраста
+    if doc.age ~= nil then
+        if doc.age < 18 then
+            plugin_log("warn", "Age validation failed: " .. doc.age)
+            return false, "Employee must be at least 18 years old"
+        end
+        if doc.age > 65 then
+            plugin_log("warn", "Age validation failed: " .. doc.age)
+            return false, "Employee cannot be older than 65 years"
+        end
+    end
+    
+    -- Проверка email
+    if doc.email ~= nil then
+        if string.match(doc.email, "^[%w._-]+@[%w._-]+%.[%w]+$") == nil then
+            plugin_log("error", "Invalid email format: " .. doc.email)
+            return false, "Invalid email format"
+        end
+    end
+    
+    -- Проверка зарплаты
+    if doc.salary ~= nil then
+        if doc.salary < 30000 then
+            plugin_log("warn", "Salary below minimum: " .. doc.salary)
+            return false, "Salary must be at least 30000"
+        end
+    end
+    
+    plugin_log("info", "Document validation passed for: " .. doc.name)
+    return true
+end
+
+-- Пользовательская функция для массовой валидации
+function validate_collection(collection_name)
+    local coll = get_collection("company", collection_name)
+    if coll == nil then
+        plugin_log("error", "Collection not found: " .. collection_name)
+        return 0
+    end
+    
+    -- Здесь можно реализовать массовую валидацию
+    plugin_log("info", "Validating collection: " .. collection_name)
+    return 0
+end
+```
+
+**Использование плагина валидации документов**
+
+```sh
+# Создание базы данных и коллекции
+futriix:~> create database company
+✓ Database 'company' created
+
+futriix:~> use company
+✓ Switched to database 'company'
+
+futriix:~> create collection employees
+✓ Collection 'employees' created in database 'company'
+
+# Загрузка и запуск плагина валидации
+futriix:~> plugin load validation ./plugins/validation.lua
+✓ Plugin 'validation' loaded successfully
+  Version: 1.0.0
+  Author: admin
+  Description: Document validation rules for employees collection
+
+futriix:~> plugin start validation
+✓ Plugin 'validation' started
+
+# Вставка валидного документа
+futriix:~> insert employees name=John Doe,age=25,email=john@company.com,salary=45000
+✓ Document inserted with ID: emp_001
+
+# Вставка невалидного документа (возраст < 18)
+futriix:~> insert employees name=Jane Smith,age=16,email=jane@company.com,salary=20000
+Error: Employee must be at least 18 years old
+
+# Вставка невалидного документа (некорректный email)
+futriix:~> insert employees name=Bob Johnson,age=30,email=invalid-email,salary=50000
+Error: Invalid email format
+
+# Выполнение пользовательской функции плагина
+futriix:~> plugin call validation validate_collection employees
+✓ Function returned: 0
+```
+
+**Управление плагинами через HTTP API**
+
+```sh
+# Получение списка плагинов через API
+curl -X GET "http://localhost:8080/api/plugin/list" \
+  -H "X-Session-ID: abc123"
+
+# Загрузка плагина через API
+curl -X POST http://localhost:8080/api/plugin/load \
+  -H "Content-Type: application/json" \
+  -H "X-Session-ID: abc123" \
+  -d '{"name":"validation","path":"./plugins/validation.lua"}'
+
+# Запуск плагина через API
+curl -X POST "http://localhost:8080/api/plugin/start/validation" \
+  -H "X-Session-ID: abc123"
+
+# Выполнение функции плагина через API
+curl -X POST http://localhost:8080/api/plugin/call \
+  -H "Content-Type: application/json" \
+  -H "X-Session-ID: abc123" \
+  -d '{"plugin":"validation","function":"validate_collection","args":["employees"]}'
+```
+
+**Плагины как инструмент написания движков для futriix**
+
+Для написания нового движка (LSM-дерева, key-value или time-series) необходимо два файла: файл с названием самого движка с расширением **.lua**
+и файл **Манифест-плагина**  с расширением **.json**
+
+**Манифест плагина-движка** — это JSON-файл, который сопровождает Lua-скрипт плагина и предоставляет системе метаданные о плагине. Манифест необходим для корректной загрузки, регистрации и управления плагинами, реализующими кастомные движки хранения данных.
+Расположение и именование
+
+Манифест должен располагаться в той же директории, что и Lua-скрипт плагина (по умолчанию `/futriix/plugins`), и иметь идентичное имя файла с расширением **.json**. Например:
+
+```sh
+plugins/
+├── timescale_engine.lua      # Lua-скрипт движка
+└── timescale_engine.json     # Манифест движка
+```
+
+**Структура манифеста**
+
+```sh
+{
+    "name": "timescale_engine",
+    "version": "1.0.0",
+    "author": "Example Corp",
+    "description": "Time-series storage engine with automatic partitioning",
+    "api_version": "1.0",
+    "engine_type": "timescale",
+    "min_go_version": "1.21",
+    "dependencies": [
+        {
+            "name": "base_engine",
+            "version": "2.0.0",
+            "min_version": "2.0.0",
+            "max_version": "3.0.0",
+            "optional": false
+        }
+    ],
+    "entry_point": "create_engine",
+    "created_at": 1704067200000,
+    "updated_at": 1704153600000
+}
+
+```
+
+**Поля манифеста**
+
+| Поле | Тип | Обязательное | Описание |
+|------|-----|--------------|----------|
+| `name` | string | ✅ | Уникальное имя плагина. Должно совпадать с именем Lua-файла (без расширения) |
+| `version` | string | ✅ | Версия плагина в формате Semantic Versioning (X.Y.Z) |
+| `author` | string | ❌ | Автор или организация-разработчик плагина |
+| `description` | string | ❌ | Краткое описание функциональности плагина |
+| `api_version` | string | ✅ | Версия API СУБД, с которой совместим плагин |
+| `engine_type` | string | ✅ | **Ключевое поле**. Определяет, что плагин является движком хранения. Значение используется как идентификатор движка при создании коллекций |
+| `min_go_version` | string | ❌ | Минимальная версия Go, необходимая для работы плагина |
+| `dependencies` | array | ❌ | Список зависимостей от других плагинов |
+| `entry_point` | string | ❌ | Имя Lua-функции-фабрики, создающей экземпляр движка. По умолчанию: `create_engine` |
+| `created_at` | int64 | ❌ | Время создания манифеста (Unix timestamp в миллисекундах) |
+| `updated_at` | int64 | ❌ | Время последнего обновления манифеста |
+
+
+
+**Структура зависимости**
+
+Каждая зависимость в массиве `dependencies` имеет следующую структуру:
+
+
+| Поле | Тип | Обязательное | Описание |
+|------|-----|--------------|----------|
+| `name` | string | ✅ | Имя зависимого плагина |
+| `version` | string | ❌ | Точная версия зависимого плагина (если указана, требует точного соответствия) |
+| `min_version` | string | ❌ | Минимальная допустимая версия (включительно) |
+| `max_version` | string | ❌ | Максимальная допустимая версия (исключительно) |
+| `optional` | boolean | ❌ | Является ли зависимость опциональной. По умолчанию: `false` |
+
+
+
+**Процесс загрузки плагина с манифестом**
+
+1. Обнаружение: Система сканирует директорию плагинов и находит Lua-файлы
+2. Чтение манифеста: При наличии JSON-файла с тем же именем система загружает и парсит его.
+
+  Валидация:
+
+  * Проверяется наличие обязательных полей (name, version, api_version)
+  * Проверяется, что engine_type не пуст (для движков)
+  * Проверяется совместимость версий зависимостей
+
+3. Регистрация движка: Если engine_type указан, система автоматически регистрирует плагин в EngineRegistry под этим именем
+4. Загрузка Lua-скрипта: Выполняется Lua-скрипт, который должен экспортировать фабричную функцию (по умолчанию create_engine)
+5. Вызов фабрики: При создании экземпляра движка для конкретной коллекции вызывается фабричная функция с передачей конфигурации
+
+**Пример использования**
+
+**Создание манифеста для Time-Series движка:**
+
+```sh
+{
+    "name": "ts_engine",
+    "version": "1.2.0",
+    "author": "Futriix Team",
+    "description": "High-performance time-series storage engine with automatic downsampling",
+    "api_version": "1.0",
+    "engine_type": "timeseries",
+    "dependencies": [
+        {
+            "name": "compression_plugin",
+            "min_version": "1.0.0",
+            "optional": false
+        }
+    ],
+    "entry_point": "new_timeseries_engine",
+    "created_at": 1704067200000,
+    "updated_at": 1704153600000
+}
+```
+
+**Рекомендации по версионированию**
+
+* Используйте Semantic Versioning (MAJOR.MINOR.PATCH)
+* Увеличивайте MAJOR-версию при несовместимых изменениях API движка
+* Увеличивайте MINOR-версию при добавлении новой функциональности
+* Увеличивайте PATCH-версию при исправлении ошибок
+
+
+**Обработка ошибок**
+
+При отсутствии манифеста система пытается загрузить плагин в "упрощённом режиме", используя значения по умолчанию. Однако для плагинов-движков манифест является обязательным, так как поле engine_type необходимо для корректной регистрации.
+
+Ошибки при разборе манифеста логируются, но не препятствуют загрузке Lua-скрипта (если это не плагин-движок). При критических ошибках (отсутствие engine_type у движка) загрузка прерывается с соответствующим сообщением.
+
 
 <p align="right">(<a href="#readme-top">К началу</a>)</p>
 
