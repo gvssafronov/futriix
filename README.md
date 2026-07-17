@@ -30,7 +30,7 @@
 <!-- TABLE OF CONTENTS -->
 <br>
 <!-- <details> -->
-  <summary><b>Содержание</b></summary></br>
+  <b>Содержание</b></br>
   <ol>
      <li>
     <a href="#о-проекте">О проекте</a>
