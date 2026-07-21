@@ -1370,8 +1370,9 @@ Idle → Preparing → Migrating → Delta Sync → Validating → Completed
 3. auto — полностью автоматическая непрерывная миграция
 
 </br>
+</br>
 
-**Команды управления:**
+### Команды управления:
 
  * migration start <source_dc> <target_dc> [db] [collection] — запуск миграции
  * migration status [task_id] — статус миграции
@@ -1382,8 +1383,9 @@ Idle → Preparing → Migrating → Delta Sync → Validating → Completed
  * migration queue — состояние очереди изменений
 
  </br>
+ </br>
 
-**Компоненты системы**
+### Компоненты системы
 
 | Компонент | Описание | Настройки |
 |-----------|----------|-----------|
@@ -1394,7 +1396,9 @@ Idle → Preparing → Migrating → Delta Sync → Validating → Completed
 | **Checkpoint & Resume** | Чекпоинты для возобновления миграции | `checkpoint_interval_sec` |
 | **Delta Sync** | Синхронизация изменений после основной миграции | `interval_sec, max_lag_sec` |
 | **Validation** | Проверка целостности данных | `sample_percent, max_errors` |
+---
 
+</br>
 </br>
 
 ### Жизненный цикл миграции
@@ -1407,6 +1411,10 @@ Idle → Preparing → Migrating → Delta Sync → Validating → Completed
 | **DELTA_SYNC** | Синхронизация изменений, произошедших во время миграции | Автоматически после синхронизации | `migration pause`, `migration status` |
 | **VALIDATING** | Проверка целостности данных (контрольные суммы) | Автоматически после валидации | `migration status` |
 | **COMPLETED** | Миграция успешно завершена | — | `migration validate`, `migration list` |
+---
+
+</br>
+</br>
 
 ### Обработка исключительных состояний
 
@@ -1420,6 +1428,10 @@ Idle → Preparing → Migrating → Delta Sync → Validating → Completed
 | **DELTA_SYNC** | Критическая ошибка | → **FAILED** | Сетевой сбой, отказ узла, таймаут |
 | **PREPARING** | Критическая ошибка | → **FAILED** | Недоступность источника или цели |
 | **VALIDATING** | Ошибка валидации | → **COMPLETED** | Ошибки логируются, миграция завершается |
+---
+
+</br>
+</br>
 
 ### Таблица переходов состояний
 
@@ -1441,6 +1453,10 @@ Idle → Preparing → Migrating → Delta Sync → Validating → Completed
 | COMPLETED | — | — |
 | FAILED | `migration resume` (после исправления) | MIGRATING |
 | FAILED | `migration cancel` | FAILED |
+---
+
+</br>
+</br>
 
 ### Временные метрики этапов
 
@@ -1451,7 +1467,10 @@ Idle → Preparing → Migrating → Delta Sync → Validating → Completed
 | **DELTA_SYNC** | Зависит от количества изменений | Интенсивность записи во время миграции, `interval_sec` |
 | **VALIDATING** | 5-30% от времени миграции | `sample_percent`, размер документов |
 | **PAUSED** | Неограниченно | Время до возобновления пользователем |
+---
 
+</br>
+</br>
 
 ### Поток данных
 
@@ -1465,6 +1484,10 @@ Idle → Preparing → Migrating → Delta Sync → Validating → Completed
 | 6 | Дельта-синхронизация | CDC изменения |
 | 7 | Валидация | SHA-256 контрольные суммы |
 | 8 | Завершение | Обновление статуса |
+---
+
+</br>
+</br>
 
 **Режимы работы**
 
@@ -1473,6 +1496,10 @@ Idle → Preparing → Migrating → Delta Sync → Validating → Completed
 | **manual** | Полностью ручное управление | Нет |
 | **semi_auto** | Основная миграция вручную, дельта автоматическая | Частичная |
 | **auto** | Полностью автоматическая непрерывная миграция | Полная |
+---
+
+</br>
+</br>
 
 **Пример конфигурации**
 
@@ -1513,6 +1540,7 @@ Idle → Preparing → Migrating → Delta Sync → Validating → Completed
         max_errors = 100
   ```
 </br>
+</br>
 
 ### Команды управления миграцией
 
@@ -1531,8 +1559,10 @@ Idle → Preparing → Migrating → Delta Sync → Validating → Completed
 | `migration config` | Вывод текущей конфигурации мигратора из config.toml | `migration config` |
 | `migration queue` | Отображение состояния очереди изменений (размер, LSN) | `migration queue` |
 | `migration validate <task_id>` | Запуск валидации данных для завершённой миграции | `migration validate mig_1734567890_dc-primary` |
-
 ---
+
+</br>
+</br>
 
 ### Статусы миграции
 
@@ -1546,8 +1576,10 @@ Idle → Preparing → Migrating → Delta Sync → Validating → Completed
 | `completed` | Миграция успешно завершена, все данные перенесены | 🟢 Зелёный | `migration validate`, `migration list` |
 | `failed` | Миграция завершилась с ошибкой, требуется вмешательство | 🔴 Красный | `migration status` (просмотр ошибки), `migration resume` (после исправления), `migration cancel` |
 | `paused` | Миграция приостановлена пользователем | 🟠 Оранжевый | `migration resume`, `migration cancel` |
-
 ---
+
+</br>
+</br>
 
 ### Метрики мониторинга
 
@@ -1568,8 +1600,9 @@ Idle → Preparing → Migrating → Delta Sync → Validating → Completed
 | `failed_docs` | Количество документов с ошибкой миграции | количество | `migration status` |
 | `elapsed_time` | Время, прошедшее с начала миграции | секунды | `migration status` |
 | `validation_errors` | Количество ошибок валидации | количество | `migration status` |
-
 ---
+</br>
+</br>
 
 ### Обработка ошибок
 
@@ -1585,7 +1618,7 @@ Idle → Preparing → Migrating → Delta Sync → Validating → Completed
 | **Ошибка валидации** | Контрольная сумма документа не совпадает | Логирование ошибки, продолжение миграции | Проверить целостность данных, при необходимости перезапустить миграцию |
 | **Прерывание пользователем** | Пользователь выполнил `migration cancel` | Немедленная остановка, переход в статус `failed` | — |
 | **Таймаут дельта-синхронизации** | Задержка превысила `max_lag_sec` | Увеличение интервала или ручная синхронизация | Настроить `interval_sec` и `max_lag_sec`, проверить пропускную способность канала |
-
+---
 
   **Гарантии целостности**
 
