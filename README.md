@@ -1395,7 +1395,7 @@ Idle → Preparing → Migrating → Delta Sync → Validating → Completed
 | **Delta Sync** | Синхронизация изменений после основной миграции | `interval_sec, max_lag_sec` |
 | **Validation** | Проверка целостности данных | `sample_percent, max_errors` |
 
-**Графическое изображение жизненного цикла миграции**
+</br>
 
 ### Жизненный цикл миграции
 
