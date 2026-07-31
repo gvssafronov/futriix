@@ -431,6 +431,24 @@ Raft-лог (raft_data/)
   * `Подписка` — компоненты могут отслеживать изменения в реальном времени
 
 
+  **Основные команды изменения параметров конфигурации с помощью REPL**
+
+  
+* config show                    # Показать текущую конфигурацию
+* config show --section=cluster  # Показать секцию
+* config set key=value           # Установить параметр
+* config set --dry-run key=value # Проверить изменение без применения
+* config history                 # Показать историю
+* config history --limit=10      # Последние 10 изменений
+* config rollback                # Откат к предыдущей версии
+* config rollback --version=5    # Откат к версии 5
+* config diff --version=3        # Сравнить с версией 3
+* config export --file=cfg.json  # Экспорт в JSON
+* config import --file=cfg.json  # Импорт из JSON
+* config watch                   # Следить за изменениями
+* config validate                # Проверить валидность
+
+
 **Пример изменения параметров через REPL**
 
 ```sh
