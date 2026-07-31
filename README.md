@@ -430,6 +430,8 @@ Raft-лог (raft_data/)
 
   * `Подписка` — компоненты могут отслеживать изменения в реальном времени
 
+<br>
+<br>
 
   **Основные команды изменения параметров конфигурации с помощью REPL**
 
@@ -447,6 +449,9 @@ Raft-лог (raft_data/)
 * config import --file=cfg.json  # Импорт из JSON
 * config watch                   # Следить за изменениями
 * config validate                # Проверить валидность
+
+<br>
+<br>
 
 
 **Пример изменения параметров через REPL**
@@ -498,6 +503,32 @@ curl -X GET http://localhost:8080/api/v1/config/history
 curl -X POST http://localhost:8080/api/v1/config/rollback \
   -H "Content-Type: application/json" \
   -d '{"version": 5}'
+
+# Одновременное изменение нескольких параметров
+
+curl -X POST http://localhost:8080/api/v1/config \
+  -H "Content-Type: application/json" \
+  -d '{
+  "changes": {
+    "cluster.name": "production_cluster",
+    "cluster.heartbeat_timeout_ms": 2000,
+    "cluster.election_timeout_ms": 1500,
+    "storage.page_size_mb": 128,
+    "storage.max_collections": 500,
+    "replication.enabled": true,
+    "replication.sync_replication": true,
+    "wal.segment_size_mb": 128,
+    "wal.sync_interval_sec": 3,
+    "mvcc.max_versions_per_doc": 20,
+    "mvcc.retention_days": 14,
+    "saga.enabled": true,
+    "saga.coordinator_count": 5,
+    "backpressure.enabled": true,
+    "backpressure.cpu_threshold": 0.85
+  },
+  "description": "Настройки для production окружения",
+  "changed_by": "admin@futriix.com"
+}'
 ```
 
 
