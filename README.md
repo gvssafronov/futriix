@@ -433,22 +433,21 @@ Raft-лог (raft_data/)
 <br>
 <br>
 
-  **Основные команды изменения параметров конфигурации с помощью REPL**
-
-  
-* config show                    # Показать текущую конфигурацию
-* config show --section=cluster  # Показать секцию
-* config set key=value           # Установить параметр
-* config set --dry-run key=value # Проверить изменение без применения
-* config history                 # Показать историю
-* config history --limit=10      # Последние 10 изменений
-* config rollback                # Откат к предыдущей версии
-* config rollback --version=5    # Откат к версии 5
-* config diff --version=3        # Сравнить с версией 3
-* config export --file=cfg.json  # Экспорт в JSON
-* config import --file=cfg.json  # Импорт из JSON
-* config watch                   # Следить за изменениями
-* config validate                # Проверить валидность
+ | Команда | Описание |
+|---------|----------|
+| `config show` | Показать текущую конфигурацию |
+| `config show --section=cluster` | Показать секцию |
+| `config set key=value` | Установить параметр |
+| `config set --dry-run key=value` | Проверить изменение без применения |
+| `config history` | Показать историю |
+| `config history --limit=10` | Последние 10 изменений |
+| `config rollback` | Откат к предыдущей версии |
+| `config rollback --version=5` | Откат к версии 5 |
+| `config diff --version=3` | Сравнить с версией 3 |
+| `config export --file=cfg.json` | Экспорт в JSON |
+| `config import --file=cfg.json` | Импорт из JSON |
+| `config watch` | Следить за изменениями |
+| `config validate` | Проверить валидность |
 
 <br>
 <br>
@@ -477,6 +476,16 @@ Raft-лог (raft_data/)
 ```
 <br>
 <br>
+
+| Поле | Назначение |
+|------|------------|
+| `changes` | Map с ключ-значение изменяемых параметров конфигурации. Ключи — точечные пути к полям (например, `cluster.heartbeat_timeout_ms`) |
+| `description` | Описание изменения для аудита (почему и зачем меняем) |
+| `changed_by` | Идентификатор пользователя, выполняющего изменение (для аудита и отслеживания) |
+
+<br>
+<br>
+
 
 **Пример изменения параметров через HTTP-API**
 
