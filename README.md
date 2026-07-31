@@ -430,6 +430,59 @@ Raft-лог (raft_data/)
 
   * `Подписка` — компоненты могут отслеживать изменения в реальном времени
 
+
+**Пример изменения параметров через REPL**
+
+```sh
+# Запускаем REPL
+./futriix repl
+
+# Просмотр текущей конфигурации
+> config show
+
+# Изменение параметра
+> config set cluster.heartbeat_timeout_ms 2000
+
+# Изменение нескольких параметров
+> config set storage.page_size_mb 128 replication.enabled true
+
+# Просмотр истории изменений
+> config history
+
+# Откат к предыдущей версии
+> config rollback
+```
+<br>
+<br>
+
+**Пример изменения параметров через HTTP-API**
+
+```sh
+# Получение текущей конфигурации
+curl -X GET http://localhost:8080/api/v1/config
+
+# Изменение параметра
+curl -X POST http://localhost:8080/api/v1/config \
+  -H "Content-Type: application/json" \
+  -d '{
+    "changes": {
+      "cluster.heartbeat_timeout_ms": 2000,
+      "storage.page_size_mb": 128
+    },
+    "description": "Оптимизация для высокой нагрузки",
+    "changed_by": "admin@futriix"
+  }'
+
+# Получение истории изменений
+curl -X GET http://localhost:8080/api/v1/config/history
+
+# Откат к версии
+curl -X POST http://localhost:8080/api/v1/config/rollback \
+  -H "Content-Type: application/json" \
+  -d '{"version": 5}'
+```
+
+
 <p align="right">(<a href="#readme-top">К началу</a>)</p>
 
 
