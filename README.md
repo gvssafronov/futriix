@@ -5,7 +5,7 @@
 *** that would make this better, please fork the repo and create a pull request
 *** or simply open an issue with the tag "enhancement".
 *** Don't forget to give the project a star!
-*** Thanks again! Now go create something AMAZING! 
+*** Thanks again! Now go create something AMAZING! :D
 -->
 
 <!-- PROJECT LOGO -->
@@ -13,16 +13,17 @@
 <div align="center">
 <!--  <a href="https://github.com/othneildrew/Best-README-Template"> -->
 <img src="Logo.png" height=100 alt="Logo.png"></img>
-	</a>
+  </a>
 
-	<p align="center">
-	<h3> <b>futriix — распределённая in‑memory NoSQL СУБД написанная на языке Go с поддержкой Lua‑плагинов,совместимая с Linux и Illumos, использующая алгоритмы неблокирующей синхронизации.</b> <br></h3>
-		<br />
-		<br />
-	<!--   <a href="">Сообщить об ошибке</a> 
-		&middot;
+  <p align="center">
+  <h3> <b>futriix-это легковесная, распределённая wait-free и lock-free дружественная in-memory СУБД, 
+реализованная на Go с поддержкой плагинов на языке lua для операционных систем на базе Solaris (ядра Illumos)</b> <br></h3>
+    <br />
+    <br />
+  <!--   <a href="">Сообщить об ошибке</a> 
+    &middot;
  <!--    <a href="">Предложение новой функциональности</a> -->
-	</p>
+  </p>
 </div>
 
 	## Краткая документация проекта futriix
