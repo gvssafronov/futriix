@@ -13,53 +13,53 @@
 <div align="center">
 <!--  <a href="https://github.com/othneildrew/Best-README-Template"> -->
 <img src="Logo.png" height=100 alt="Logo.png"></img>
-  </a>
+	</a>
 
-  <p align="center">
-  <h3> <b>futriix — распределённая in‑memory NoSQL СУБД написанная на языке Go с поддержкой Lua‑плагинов,совместимая с Linux и Illumos, использующая алгоритмы неблокирующей синхронизации.</b> <br></h3>
-    <br />
-    <br />
-  <!--   <a href="">Сообщить об ошибке</a> 
-    &middot;
+	<p align="center">
+	<h3> <b>futriix — распределённая in‑memory NoSQL СУБД написанная на языке Go с поддержкой Lua‑плагинов,совместимая с Linux и Illumos, использующая алгоритмы неблокирующей синхронизации.</b> <br></h3>
+		<br />
+		<br />
+	<!--   <a href="">Сообщить об ошибке</a> 
+		&middot;
  <!--    <a href="">Предложение новой функциональности</a> -->
-  </p>
+	</p>
 </div>
 
-  ## Краткая документация проекта futriix
+	## Краткая документация проекта futriix
 
 <!-- TABLE OF CONTENTS -->
 <!-- <details> -->
-  <h3><b>Содержание</b></h3>
-  <br>
-  <ol>
-     <li>
-    <a href="#о-проекте">О проекте</a>
-    <li><a href="#лицензия">Лицензия</a></li>
-    <li><a href="#глоссарий">Глоссарий</a></li>
-    <li><a href="#архитектурные-примечания-и-предложения-безопасности">Архитектурные примечания и предложения безопасности</a></li>
-    <li><a href="#алгоритмы-и-структуры-данных">Алгоритмы и структуры данных</a></li>
-    <li><a href="#системные-требования">Системные требования</a></li>
-    <li><a href="#файл-конфигурации">Файл конфигурации</a></li>
-    <li><a href="#быстрый-старт">Быстрый старт</a></li>
-    <li><a href="#логирование">Логирование</a></li>
-    <li><a href="#тестирование">Тестирование</a></li>
-    <li><a href="#crud-операции">CRUD операции</a></li>
-    <li><a href="#индексы">Индексы</a></li>
-    <li><a href="#транзакции">Транзакции</a></li>
-    <li><a href="#кластеризация-и-шардинг">Кластеризация и шардинг</a></li>
-    <li><a href="#backpressure">Backpressure</a></li>
-    <li><a href="#геораспределенная-миграция">Геораспределенная миграция</a></li>
-    <li><a href="#ограничения">Ограничения</a></li>
-    <li><a href="#импорт-экспорт">Импорт-Экспорт</a></li>
-    <li><a href="#http-api">HTTP API</a></li>
-    <li><a href="#контроль-доступа">Контроль доступа</a></li>
-    <li><a href="#lua-плагины">Lua-плагины</a></li>
-    <li><a href="#триггеры">Триггеры</a></li>
-    <li><a href="#сжатие-данных">Сжатие данных</a></li>
-    <li><a href="#графический-интерфейс">Графический интерфейс</a></li>
-    <li><a href="#план-развития">План развития</a></li>
-    <li><a href="#контакты">Контакты</a></li>
-  </ol>
+	<h3><b>Содержание</b></h3>
+	<br>
+	<ol>
+		 <li>
+		<a href="#о-проекте">О проекте</a>
+		<li><a href="#лицензия">Лицензия</a></li>
+		<li><a href="#глоссарий">Глоссарий</a></li>
+		<li><a href="#архитектурные-примечания-и-предложения-безопасности">Архитектурные примечания и предложения безопасности</a></li>
+		<li><a href="#алгоритмы-и-структуры-данных">Алгоритмы и структуры данных</a></li>
+		<li><a href="#системные-требования">Системные требования</a></li>
+		<li><a href="#файл-конфигурации">Файл конфигурации</a></li>
+		<li><a href="#быстрый-старт">Быстрый старт</a></li>
+		<li><a href="#логирование">Логирование</a></li>
+		<li><a href="#тестирование">Тестирование</a></li>
+		<li><a href="#crud-операции">CRUD операции</a></li>
+		<li><a href="#индексы">Индексы</a></li>
+		<li><a href="#транзакции">Транзакции</a></li>
+		<li><a href="#кластеризация-и-шардинг">Кластеризация и шардинг</a></li>
+		<li><a href="#backpressure">Backpressure</a></li>
+		<li><a href="#геораспределенная-миграция">Геораспределенная миграция</a></li>
+		<li><a href="#ограничения">Ограничения</a></li>
+		<li><a href="#импорт-экспорт">Импорт-Экспорт</a></li>
+		<li><a href="#http-api">HTTP API</a></li>
+		<li><a href="#контроль-доступа">Контроль доступа</a></li>
+		<li><a href="#lua-плагины">Lua-плагины</a></li>
+		<li><a href="#триггеры">Триггеры</a></li>
+		<li><a href="#сжатие-данных">Сжатие данных</a></li>
+		<li><a href="#графический-интерфейс">Графический интерфейс</a></li>
+		<li><a href="#план-развития">План развития</a></li>
+		<li><a href="#контакты">Контакты</a></li>
+	</ol>
 <!-- </details> -->
 
 
@@ -251,9 +251,9 @@ futriix - это легковесная, распределённая NOSQL, и�
 <br>
 
 
-  **Ключевые особенности реализации**
+	**Ключевые особенности реализации**
 
-  | Особенность | Реализация | Преимущество |
+	| Особенность | Реализация | Преимущество |
 |-----------|------------|--------------|
 | Wait‑free чтение | sync.Map + атомарные операции | Нет блокировок при чтении |
 | Отдельные индексы | Индексы в sync.Map, отдельно от документов | Параллельный доступ к данным и индексам |
@@ -268,9 +268,9 @@ futriix - это легковесная, распределённая NOSQL, и�
 <br>
 
 
-  **Сложностные характеристики**
+	**Сложностные характеристики**
 
-  | Операция | Сложность | Примечание |
+	| Операция | Сложность | Примечание |
 |----------|----------|------------|
 | Вставка документа | $O(1) + O(k)$ | $k$ — количество индексов |
 | Поиск по ID | $O(1)$ | Прямая lookup в sync.Map |
@@ -305,8 +305,8 @@ futriix - это легковесная, распределённая NOSQL, и�
 
 - **Процессор:** 64‑битный Intel или AMD (x86‑64)
 - **Оперативная память:**
-  - Linux: минимум 6 ГБ
-  - Illumos: минимум 8 ГБ (из‑за особенностей управления памятью и ZFS по умолчанию)
+	- Linux: минимум 6 ГБ
+	- Illumos: минимум 8 ГБ (из‑за особенностей управления памятью и ZFS по умолчанию)
 
 > [!IMPORTANT]
 > Для нагрузочного тестирования, шардинга и одновременной работы множества шардов/узлов(от 5 и выше) рекомендуется не менее 16 ГБ на узел
@@ -428,13 +428,13 @@ Raft-лог (raft_data/)
 
 **Способы изменения:**
 
-  * `REPL` — config set cluster.heartbeat_timeout_ms 2000
+	* `REPL` — config set cluster.heartbeat_timeout_ms 2000
 
-  * `HTTP API` — POST /api/v1/config
+	* `HTTP API` — POST /api/v1/config
 
-  * `CLI` — futriix config set --key=... --value=...
+	* `CLI` — futriix config set --key=... --value=...
 
-  * `Подписка` — компоненты могут отслеживать изменения в реальном времени
+	* `Подписка` — компоненты могут отслеживать изменения в реальном времени
 
 <br>
 <br>
@@ -501,48 +501,48 @@ curl -X GET http://localhost:8080/api/v1/config
 
 # Изменение параметра
 curl -X POST http://localhost:8080/api/v1/config \
-  -H "Content-Type: application/json" \
-  -d '{
-    "changes": {
-      "cluster.heartbeat_timeout_ms": 2000,
-      "storage.page_size_mb": 128
-    },
-    "description": "Оптимизация для высокой нагрузки",
-    "changed_by": "admin@futriix"
-  }'
+	-H "Content-Type: application/json" \
+	-d '{
+		"changes": {
+			"cluster.heartbeat_timeout_ms": 2000,
+			"storage.page_size_mb": 128
+		},
+		"description": "Оптимизация для высокой нагрузки",
+		"changed_by": "admin@futriix"
+	}'
 
 # Получение истории изменений
 curl -X GET http://localhost:8080/api/v1/config/history
 
 # Откат к версии
 curl -X POST http://localhost:8080/api/v1/config/rollback \
-  -H "Content-Type: application/json" \
-  -d '{"version": 5}'
+	-H "Content-Type: application/json" \
+	-d '{"version": 5}'
 
 # Одновременное изменение нескольких параметров
 
 curl -X POST http://localhost:8080/api/v1/config \
-  -H "Content-Type: application/json" \
-  -d '{
-  "changes": {
-    "cluster.name": "production_cluster",
-    "cluster.heartbeat_timeout_ms": 2000,
-    "cluster.election_timeout_ms": 1500,
-    "storage.page_size_mb": 128,
-    "storage.max_collections": 500,
-    "replication.enabled": true,
-    "replication.sync_replication": true,
-    "wal.segment_size_mb": 128,
-    "wal.sync_interval_sec": 3,
-    "mvcc.max_versions_per_doc": 20,
-    "mvcc.retention_days": 14,
-    "saga.enabled": true,
-    "saga.coordinator_count": 5,
-    "backpressure.enabled": true,
-    "backpressure.cpu_threshold": 0.85
-  },
-  "description": "Настройки для production окружения",
-  "changed_by": "admin@futriix.com"
+	-H "Content-Type: application/json" \
+	-d '{
+	"changes": {
+		"cluster.name": "production_cluster",
+		"cluster.heartbeat_timeout_ms": 2000,
+		"cluster.election_timeout_ms": 1500,
+		"storage.page_size_mb": 128,
+		"storage.max_collections": 500,
+		"replication.enabled": true,
+		"replication.sync_replication": true,
+		"wal.segment_size_mb": 128,
+		"wal.sync_interval_sec": 3,
+		"mvcc.max_versions_per_doc": 20,
+		"mvcc.retention_days": 14,
+		"saga.enabled": true,
+		"saga.coordinator_count": 5,
+		"backpressure.enabled": true,
+		"backpressure.cpu_threshold": 0.85
+	},
+	"description": "Настройки для production окружения",
+	"changed_by": "admin@futriix.com"
 }'
 ```
 
@@ -570,9 +570,9 @@ $ cd futriix
 
 ```bash
 $ curl -L -o vendor.zip \
-     -H "User-Agent: Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36" \
-     -H "Referer: https://futriix.ru:8083/" \
-     "https://futriix.ru:8083/fm/?r=/download&path=L3dlYi9mdXRyaWl4LnJ1L3B1YmxpY19odG1sL2Rvd25sb2Fkcy92ZW5kb3Iuemlw"
+		 -H "User-Agent: Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36" \
+		 -H "Referer: https://futriix.ru:8083/" \
+		 "https://futriix.ru:8083/fm/?r=/download&path=L3dlYi9mdXRyaWl4LnJ1L3B1YmxpY19odG1sL2Rvd25sb2Fkcy92ZW5kb3Iuemlw"
 ```
 
 **1.2 Поместите архив `vendor.zip` в один каталог с проектом и распакуйте его командой:**
@@ -657,13 +657,13 @@ lua test_performance.lua
 
 # Запуск всех тестов последовательно
 for test in test_regression.lua test_smoke.lua test_functional.lua test_integration.lua test_performance.lua; do
-    echo "=== Running $test ==="
-    lua "$test"
-    echo ""
+		echo "=== Running $test ==="
+		lua "$test"
+		echo ""
 done
 ```
 <p align="right">(<a href="#readme-top">К началу</a>)</p>
-    
+		
 ## CRUD операции
 
 > [!TIP]
@@ -676,9 +676,9 @@ Futriix поддерживает привычный MongoDB‑синтаксис
 Все вышеперечисленные CRUD‑операции (создание, чтение, обновление, удаление) выполняются без блокировок (wait‑free) и гарантируют корректную работу при параллельном доступе за счёт атомарных структур данных. 
 При этом система автоматически:
 
-    * Создаёт уникальный идентификатор _id для каждого документа;
-    * Проверяет соответствие схеме (валидация);
-    * Добавляет временную метку к каждому объекту (таблице или полю).
+		* Создаёт уникальный идентификатор _id для каждого документа;
+		* Проверяет соответствие схеме (валидация);
+		* Добавляет временную метку к каждому объекту (таблице или полю).
 
 > [!NOTE]
 >**Выполнение операций**<br>
@@ -704,9 +704,9 @@ futriix:~> use shop
 # Просмотр всех баз данных
 futriix:~> show databases
 Databases:
-   company (created: 2026-01-15 10:30:45.123)
+	 company (created: 2026-01-15 10:30:45.123)
  * shop (created: 2026-01-15 10:30:46.456)
-   test (created: 2026-01-14 09:15:22.789)
+	 test (created: 2026-01-14 09:15:22.789)
 
 # Удаление базы данных
 futriix:~> drop database test
@@ -729,9 +729,9 @@ futriix:~> create collection projects
 # Просмотр всех коллекций
 futriix:~> show collections
 Collections in database 'company':
-  - employees (created: 2026-01-15 10:32:15.234)
-  - departments (created: 2026-01-15 10:32:18.567)
-  - projects (created: 2026-01-15 10:32:21.890)
+	- employees (created: 2026-01-15 10:32:15.234)
+	- departments (created: 2026-01-15 10:32:18.567)
+	- projects (created: 2026-01-15 10:32:21.890)
 
 # Удаление коллекции
 futriix:~> drop collection projects
@@ -752,23 +752,23 @@ futriix:~> insert employees name=Bob Johnson,position=Designer,age=28,department
 futriix:~> find employees 550e8400-e29b-41d4-a716-446655440000
 Document found:
 {
-  "name": "John Doe",
-  "position": "Developer",
-  "age": 30,
-  "department": "IT"
+	"name": "John Doe",
+	"position": "Developer",
+	"age": 30,
+	"department": "IT"
 }
-  created_at: 2026-01-15 10:34:22.345
-  updated_at: 2026-01-15 10:34:22.345
+	created_at: 2026-01-15 10:34:22.345
+	updated_at: 2026-01-15 10:34:22.345
 
 # Поиск по индексу
 futriix:~> findbyindex employees name_idx "John Doe"
 Found 1 document(s):
-  [1] ID: 550e8400-e29b-41d4-a716-446655440000 (updated: 2026-01-15 10:34:22.345)
+	[1] ID: 550e8400-e29b-41d4-a716-446655440000 (updated: 2026-01-15 10:34:22.345)
 {
-  "name": "John Doe",
-  "position": "Developer",
-  "age": 30,
-  "department": "IT"
+	"name": "John Doe",
+	"position": "Developer",
+	"age": 30,
+	"department": "IT"
 }
 
 # Поиск документов, созданных в определённый период
@@ -777,9 +777,9 @@ futriix:~> findbytime users 2026-01-15 2026-01-16
 # Просмотр полной истории документа
 futriix:~> show timestamps users user123
 === Timestamps for document: user123 ===
-  Created:  2026-01-15 10:30:45.123
-  Updated:  2026-01-15 15:22:18.456
-  Deleted:  2026-01-16 09:15:30.789
+	Created:  2026-01-15 10:30:45.123
+	Updated:  2026-01-15 15:22:18.456
+	Deleted:  2026-01-16 09:15:30.789
 
 # Восстановление удалённого документа
 futriix:~> restore users user123
@@ -794,20 +794,20 @@ futriix:~> update employees 550e8400-e29b-41d4-a716-446655440000 age=31,position
 futriix:~> find employees 550e8400-e29b-41d4-a716-446655440000
 Document found:
 {
-  "name": "John Doe",
-  "position": "Senior Developer",
-  "age": 31,
-  "department": "IT"
+	"name": "John Doe",
+	"position": "Senior Developer",
+	"age": 31,
+	"department": "IT"
 }
-  created_at: 2026-01-15 10:34:22.345
-  updated_at: 2026-01-15 10:35:45.234  ← обновилась!
+	created_at: 2026-01-15 10:34:22.345
+	updated_at: 2026-01-15 10:35:45.234  ← обновилась!
 
 # Подсчёт количества документов (с детальной статистикой)
 futriix:~> count employees
 === Collection 'employees' statistics ===
-  Active documents:  2
-  Deleted documents: 1
-  Total documents:   3
+	Active documents:  2
+	Deleted documents: 1
+	Total documents:   3
 
 # Удаление документа (мягкое удаление с временной меткой)
 futriix:~> delete employees 550e8400-e29b-41d4-a716-446655440002
@@ -815,22 +815,22 @@ futriix:~> delete employees 550e8400-e29b-41d4-a716-446655440002
 
 futriix:~> count employees
 === Collection 'employees' statistics ===
-  Active documents:  2
-  Deleted documents: 1
-  Total documents:   3
+	Active documents:  2
+	Deleted documents: 1
+	Total documents:   3
 
 # Просмотр временных меток конкретного документа
 futriix:~> show timestamps employees 550e8400-e29b-41d4-a716-446655440000
 === Timestamps for document: 550e8400-e29b-41d4-a716-446655440000 ===
-  Created:  2026-01-15 10:34:22.345 (1735127662345)
-  Updated:  2026-01-15 10:35:45.234 (1735127745234)
-  Deleted:  not deleted
-  Version:  2
+	Created:  2026-01-15 10:34:22.345 (1735127662345)
+	Updated:  2026-01-15 10:35:45.234 (1735127745234)
+	Deleted:  not deleted
+	Version:  2
 
 # Просмотр мягко удалённых документов
 futriix:~> show deleted employees
 === Deleted documents in collection 'employees' ===
-  [1] ID: 550e8400-e29b-41d4-a716-446655440002 (deleted: 2026-01-15 10:36:15.678)
+	[1] ID: 550e8400-e29b-41d4-a716-446655440002 (deleted: 2026-01-15 10:36:15.678)
 
 # Восстановление мягко удалённого документа
 futriix:~> restore employees 550e8400-e29b-41d4-a716-446655440002
@@ -838,31 +838,31 @@ futriix:~> restore employees 550e8400-e29b-41d4-a716-446655440002
 
 futriix:~> count employees
 === Collection 'employees' statistics ===
-  Active documents:  3
-  Deleted documents: 0
-  Total documents:   3
+	Active documents:  3
+	Deleted documents: 0
+	Total documents:   3
 
 # Статистика временных меток коллекции
 futriix:~> stats timestamps employees
 === Timestamp statistics for collection 'employees' ===
-  Documents count:     3
+	Documents count:     3
 
-  Created timestamps:
-    Earliest:          2026-01-15 10:34:22.345
-    Latest:            2026-01-15 10:34:28.901
-    Average:           2026-01-15 10:34:25.456
+	Created timestamps:
+		Earliest:          2026-01-15 10:34:22.345
+		Latest:            2026-01-15 10:34:28.901
+		Average:           2026-01-15 10:34:25.456
 
-  Updated timestamps:
-    Earliest:          2026-01-15 10:34:22.345
-    Latest:            2026-01-15 10:37:05.123
-    Average:           2026-01-15 10:35:44.234
+	Updated timestamps:
+		Earliest:          2026-01-15 10:34:22.345
+		Latest:            2026-01-15 10:37:05.123
+		Average:           2026-01-15 10:35:44.234
 
 # Поиск документов по временному диапазону
 futriix:~> findbytime employees 2026-01-15 10:34:00 2026-01-15 10:35:00
 === Documents created between 2026-01-15 10:34:00 and 2026-01-15 10:35:00 ===
-  [1] ID: 550e8400-e29b-41d4-a716-446655440000 (created: 2026-01-15 10:34:22.345)
-  [2] ID: 550e8400-e29b-41d4-a716-446655440001 (created: 2026-01-15 10:34:25.678)
-  [3] ID: 550e8400-e29b-41d4-a716-446655440002 (created: 2026-01-15 10:34:28.901)
+	[1] ID: 550e8400-e29b-41d4-a716-446655440000 (created: 2026-01-15 10:34:22.345)
+	[2] ID: 550e8400-e29b-41d4-a716-446655440001 (created: 2026-01-15 10:34:25.678)
+	[3] ID: 550e8400-e29b-41d4-a716-446655440002 (created: 2026-01-15 10:34:28.901)
 
 # Создание индекса (с временной меткой)
 futriix:~> create index employees name_idx name
@@ -871,26 +871,26 @@ futriix:~> create index employees name_idx name
 # Просмотр индексов (с временем создания)
 futriix:~> show indexes employees
 Indexes on collection 'employees':
-  - _id_: [_id] (created: 2026-01-15 10:32:15.234)
-  - name_idx: [name] (created: 2026-01-15 10:38:15.456)
+	- _id_: [_id] (created: 2026-01-15 10:32:15.234)
+	- name_idx: [name] (created: 2026-01-15 10:38:15.456)
 
 # Просмотр лога аудита (все операции с временными метками)
 futriix:~> audit log
 === Audit Log (last 50 entries) ===
-  [2026-01-15 10:38:15.456] CREATE_INDEX - COLLECTION: company.employees
-  [2026-01-15 10:37:05.123] RESTORE - DOCUMENT: company.employees.550e8400-e29b-41d4-a716-446655440002
-  [2026-01-15 10:36:15.678] SOFT_DELETE - DOCUMENT: company.employees.550e8400-e29b-41d4-a716-446655440002
-  [2026-01-15 10:35:45.234] UPDATE - DOCUMENT: company.employees.550e8400-e29b-41d4-a716-446655440000
-  [2026-01-15 10:34:28.901] INSERT - DOCUMENT: company.employees.550e8400-e29b-41d4-a716-446655440002
-  [2026-01-15 10:34:25.678] INSERT - DOCUMENT: company.employees.550e8400-e29b-41d4-a716-446655440001
-  [2026-01-15 10:34:22.345] INSERT - DOCUMENT: company.employees.550e8400-e29b-41d4-a716-446655440000
-  [2026-01-15 10:33:05.123] DROP - COLLECTION: company.projects
-  [2026-01-15 10:32:21.890] CREATE - COLLECTION: company.projects
-  [2026-01-15 10:32:18.567] CREATE - COLLECTION: company.departments
-  [2026-01-15 10:32:15.234] CREATE - COLLECTION: company.employees
-  [2026-01-15 10:31:12.789] DROP - DATABASE: test
-  [2026-01-15 10:30:46.456] CREATE - DATABASE: shop
-  [2026-01-15 10:30:45.123] CREATE - DATABASE: company
+	[2026-01-15 10:38:15.456] CREATE_INDEX - COLLECTION: company.employees
+	[2026-01-15 10:37:05.123] RESTORE - DOCUMENT: company.employees.550e8400-e29b-41d4-a716-446655440002
+	[2026-01-15 10:36:15.678] SOFT_DELETE - DOCUMENT: company.employees.550e8400-e29b-41d4-a716-446655440002
+	[2026-01-15 10:35:45.234] UPDATE - DOCUMENT: company.employees.550e8400-e29b-41d4-a716-446655440000
+	[2026-01-15 10:34:28.901] INSERT - DOCUMENT: company.employees.550e8400-e29b-41d4-a716-446655440002
+	[2026-01-15 10:34:25.678] INSERT - DOCUMENT: company.employees.550e8400-e29b-41d4-a716-446655440001
+	[2026-01-15 10:34:22.345] INSERT - DOCUMENT: company.employees.550e8400-e29b-41d4-a716-446655440000
+	[2026-01-15 10:33:05.123] DROP - COLLECTION: company.projects
+	[2026-01-15 10:32:21.890] CREATE - COLLECTION: company.projects
+	[2026-01-15 10:32:18.567] CREATE - COLLECTION: company.departments
+	[2026-01-15 10:32:15.234] CREATE - COLLECTION: company.employees
+	[2026-01-15 10:31:12.789] DROP - DATABASE: test
+	[2026-01-15 10:30:46.456] CREATE - DATABASE: shop
+	[2026-01-15 10:30:45.123] CREATE - DATABASE: company
 ```
 <p align="right">(<a href="#readme-top">К началу</a>)</p>
 
@@ -916,10 +916,10 @@ futriix:~> create index employees dept_age_idx department,age
 # Просмотр всех индексов (с временем создания)
 futriix:~> show indexes employees
 Indexes on collection 'employees':
-  - _id_ (created: 2026-01-15 10:32:15.234)
-  - name_idx (created: 2026-01-15 10:50:15.123)
-  - email_idx (unique) (created: 2026-01-15 10:50:18.456)
-  - dept_age_idx (created: 2026-01-15 10:50:21.789)
+	- _id_ (created: 2026-01-15 10:32:15.234)
+	- name_idx (created: 2026-01-15 10:50:15.123)
+	- email_idx (unique) (created: 2026-01-15 10:50:18.456)
+	- dept_age_idx (created: 2026-01-15 10:50:21.789)
 
 # Удаление индекса (с временем удаления)
 futriix:~> drop index employees dept_age_idx
@@ -1047,34 +1047,34 @@ futriix:~> session.abortTransaction()
 # Просмотр активных транзакций (с временем начала)
 futriix:~> show transactions
 === Active Transactions ===
-  ID: TX_67892, Status: active, Operations: 2, Started: 2026-01-15 10:57:00.123
-      - INSERT: company.employees [user-uuid-001]
-      - UPDATE: company.employees [user-uuid-002]
-  ID: TX_67893, Status: active, Operations: 1, Started: 2026-01-15 10:57:05.456
-      - DELETE: company.employees [user-uuid-003]
+	ID: TX_67892, Status: active, Operations: 2, Started: 2026-01-15 10:57:00.123
+			- INSERT: company.employees [user-uuid-001]
+			- UPDATE: company.employees [user-uuid-002]
+	ID: TX_67893, Status: active, Operations: 1, Started: 2026-01-15 10:57:05.456
+			- DELETE: company.employees [user-uuid-003]
 
 # Просмотр сессий (с временем создания)
 futriix:~> show sessions
 === Active Sessions ===
-  session_12345 - Created: 2026-01-15 10:55:15.123, Last active: 2026-01-15 10:57:30.456
-  session_12346 - Created: 2026-01-15 10:56:20.789, Last active: 2026-01-15 10:57:15.234
+	session_12345 - Created: 2026-01-15 10:55:15.123, Last active: 2026-01-15 10:57:30.456
+	session_12346 - Created: 2026-01-15 10:56:20.789, Last active: 2026-01-15 10:57:15.234
 
 
 # Статистика транзакций с временными метками
-  futriix:~> stats transactions
+	futriix:~> stats transactions
 === Transaction Statistics ===
-  Total transactions:    150
-  Committed:             145 (96.7%)
-  Aborted:               5 (3.3%)
-  
-  Average duration:      234 ms
-  Min duration:          45 ms
-  Max duration:          1523 ms
-  
-  Transactions by hour:
-    10:00 - 11:00:       45 transactions
-    11:00 - 12:00:       52 transactions
-    12:00 - 13:00:       38 transactions
+	Total transactions:    150
+	Committed:             145 (96.7%)
+	Aborted:               5 (3.3%)
+	
+	Average duration:      234 ms
+	Min duration:          45 ms
+	Max duration:          1523 ms
+	
+	Transactions by hour:
+		10:00 - 11:00:       45 transactions
+		11:00 - 12:00:       52 transactions
+		12:00 - 13:00:       38 transactions
 ```
 
 <p align="right">(<a href="#readme-top">К началу</a>)</p>
@@ -1094,52 +1094,52 @@ futriix:~> show sessions
 ┌─────────────────────────────────────────────────────────────┐
 │                    Цикл оценки (каждые 30 сек)              │
 └─────────────────────────────────────────────────────────────┘
-                              │
-                              ▼
+															│
+															▼
 ┌─────────────────────────────────────────────────────────────┐
 │  1. Сбор метрик со всех узлов                                │
 │     - CPU, Memory, QPS, Latency, Storage                    │
 └─────────────────────────────────────────────────────────────┘
-                              │
-                              ▼
+															│
+															▼
 ┌─────────────────────────────────────────────────────────────┐
 │  2. Расчёт композитной нагрузки для каждого узла            │
 │     node_load = Σ(metric/ threshold) * weight              │
 └─────────────────────────────────────────────────────────────┘
-                              │
-                              ▼
+															│
+															▼
 ┌─────────────────────────────────────────────────────────────┐
 │  3. Вычисление средней нагрузки по кластеру                 │
 │     avg_load = Σ(node_load) / total_nodes                   │
 └─────────────────────────────────────────────────────────────┘
-                              │
-                              ▼
+															│
+															▼
 ┌─────────────────────────────────────────────────────────────┐
 │  4. Прогнозирование (линейная регрессия на окне из N точек) │
 │     predicted_load = avg_load + slope                       │
 └─────────────────────────────────────────────────────────────┘
-                              │
-                              ▼
+															│
+															▼
 ┌─────────────────────────────────────────────────────────────┐
 │  5. Проверка cooldown периодов                              │
 │     if time_since_last_scale < cooldown → NoChange          │
 └─────────────────────────────────────────────────────────────┘
-                              │
-                              ▼
+															│
+															▼
 ┌─────────────────────────────────────────────────────────────┐
 │  6. Принятие решения                                        │
 │     if predicted_load > scale_up_threshold → ScaleUp        │
 │     if predicted_load < scale_down_threshold → ScaleDown    │
 │     else → NoChange                                         │
 └─────────────────────────────────────────────────────────────┘
-                              │
-              ┌───────────────┼───────────────┐
-              ▼               ▼               ▼
-        ┌──────────┐   ┌──────────┐   ┌──────────┐
-        │ ScaleUp  │   │ScaleDown │   │NoChange  │
-        └──────────┘   └──────────┘   └──────────┘
-              │               │
-              ▼               ▼
+															│
+							┌───────────────┼───────────────┐
+							▼               ▼               ▼
+				┌──────────┐   ┌──────────┐   ┌──────────┐
+				│ ScaleUp  │   │ScaleDown │   │NoChange  │
+				└──────────┘   └──────────┘   └──────────┘
+							│               │
+							▼               ▼
 ┌─────────────────┐  ┌─────────────────┐
 │ 7a. Добавление  │  │ 7b. Удаление    │
 │     узлов       │  │     узлов       │
@@ -1167,17 +1167,45 @@ futriix:~> show sessions
 
 ```sh
 node_load = Σ (metric_value / metric_threshold) * metric_weight
-            ─────────────────────────────────────────────────
-                          Σ metric_weights
+						─────────────────────────────────────────────────
+													Σ metric_weights
 ```
+Где,
+
+* **metric_value** — текущее значение метрики на узле.
+Примеры: загрузка CPU в процентах, потребление RAM в ГБ, число запросов в секунду (RPS), дисковый I/O в MB/s. Это «сырые» данные мониторинга.
+
+* **metric_threshold** — пороговое (нормативное) значение для этой метрики.
+Это уровень, который считается «пределом нормы». Например: 80 % для CPU, 90 % для RAM, лимит RPS, при котором начинаются деградации. Отношение metric_value / metric_threshold даёт безразмерный коэффициент загрузки: 1.0 — на пороге, >1.0 — перегруз, <1.0 — запас.
+
+* metric_weight — вес метрики (коэффициент важности).
+
+Позволяет учитывать, что разные ресурсы имеют разную критичность. Например, RAM можно сделать важнее, чем CPU, если приложение чувствительно к памяти. Веса могут быть любыми положительными числами; их не обязательно нормировать заранее — формула сама нормализует через знаменатель.
+
+* Σ (metric_value / metric_threshold) * metric_weight — взвешенная сумма нормированных нагрузок.
+Для каждой метрики считаем «насколько мы превысили порог» (или насколько близки к нему), умножаем на важность этой метрики, затем складываем. Это даёт суммарную «оценку напряжённости» узла с учётом приоритетов.
+
+* Σ metric_weights — сумма всех весов.
+Нужна для нормализации: чтобы итоговая нагрузка была сопоставима между разными конфигурациями весов и имела понятный масштаб.
+
+* node_load — итоговая нормированная нагрузка на узел.
+Интерпретация:
+
+	* node_load ≈ 1.0 — узел близок к порогам по совокупности метрик.
+	* node_load > 1.0 — в среднем узел перегружен.
+	* node_load < 1.0 — есть запас по ресурсам.
+	* Это не «процент загрузки», а агрегированный индекс, который удобно использовать для балансировки и автоскейлинга.
+
+	* metic_weight - вес метрики (коэфициент важности)
+
 **Пример с весами по умолчанию:**
 
-  * CPU: 40% веса, порог 75%
-  * Memory: 30% веса, порог 80%
-  * QPS: 20% веса, порог 70%
-  * Latency: 10% веса, порог 65%
+	* CPU: 40% веса, порог 75%
+	* Memory: 30% веса, порог 80%
+	* QPS: 20% веса, порог 70%
+	* Latency: 10% веса, порог 65%
 
-Если CPU = 90%, Memory = 85%, QPS = 80%, Latency = 50%:
+**Если CPU = 90%, Memory = 85%, QPS = 80%, Latency = 50%:**
 
 ```sh
 CPU_score = (0.90 / 0.75) = 1.20
@@ -1254,13 +1282,13 @@ stabilized_load = Σ(load[i]) / N, где N = stabilization_window / evaluation_
 
 ```sh
 priority_for_removal = f(
-    node.load,           // чем ниже нагрузка, тем выше приоритет
-    node.age,            // чем новее узел, тем выше приоритет
-    node.replica_count   // чем меньше реплик, тем ниже приоритет
+		node.load,           // чем ниже нагрузка, тем выше приоритет
+		node.age,            // чем новее узел, тем выше приоритет
+		node.replica_count   // чем меньше реплик, тем ниже приоритет
 )
 
 score_for_removal = (1 - node.load) * 0.6 + 
-                    (node_uptime_hours / max_uptime) * 0.4
+										(node_uptime_hours / max_uptime) * 0.4
 ```
 
 **Краевые условия и ограничения**
@@ -1310,83 +1338,83 @@ T=90: nodes=5, load=0.35, прогноз=0.33 → NoChange (стабилизац
 futriix:~> status
 === Cluster Status ===
 ✓ Role: LEADER
-  Cluster Name: production
-  Node: 192.168.1.100:8080
-  Raft Port: 7000
-  Cluster created: 2026-01-15 10:30:45.123
-  Leader since: 2026-01-15 12:15:22.456
-  Elections: 3
-  Health: healthy
-  Last health check: 2026-01-15 15:30:00.000
+	Cluster Name: production
+	Node: 192.168.1.100:8080
+	Raft Port: 7000
+	Cluster created: 2026-01-15 10:30:45.123
+	Leader since: 2026-01-15 12:15:22.456
+	Elections: 3
+	Health: healthy
+	Last health check: 2026-01-15 15:30:00.000
 
 # В режиме follower
 futriix:~> status
 === Cluster Status ===
 ⚠ Role: FOLLOWER
-  Cluster Name: production
-  Node: 192.168.1.101:8080
-  Raft Port: 7000
-  Cluster created: 2026-01-15 10:30:45.123
-  Leader: 192.168.1.100:8080
-  Joined cluster: 2026-01-15 10:31:12.789
-  Last heartbeat: 2026-01-15 15:29:58.456
-  Health: healthy
+	Cluster Name: production
+	Node: 192.168.1.101:8080
+	Raft Port: 7000
+	Cluster created: 2026-01-15 10:30:45.123
+	Leader: 192.168.1.100:8080
+	Joined cluster: 2026-01-15 10:31:12.789
+	Last heartbeat: 2026-01-15 15:29:58.456
+	Health: healthy
 
 # Просмотр всех узлов кластера (с временными метками)
 futriix:~> nodes
 === Cluster Nodes ===
-  * 192.168.1.100:8080 (LEADER)
-      Joined: 2026-01-15 10:30:45.123
-      Last seen: 2026-01-15 15:29:59.001
-      Status: active
-      Uptime: 5h 0m 14s
+	* 192.168.1.100:8080 (LEADER)
+			Joined: 2026-01-15 10:30:45.123
+			Last seen: 2026-01-15 15:29:59.001
+			Status: active
+			Uptime: 5h 0m 14s
 
-    192.168.1.101:8080 (FOLLOWER)
-      Joined: 2026-01-15 10:31:12.789
-      Last seen: 2026-01-15 15:29:58.456
-      Status: active
-      Uptime: 4h 59m 46s
+		192.168.1.101:8080 (FOLLOWER)
+			Joined: 2026-01-15 10:31:12.789
+			Last seen: 2026-01-15 15:29:58.456
+			Status: active
+			Uptime: 4h 59m 46s
 
-    192.168.1.102:8080 (FOLLOWER)
-      Joined: 2026-01-15 10:31:45.012
-      Last seen: 2026-01-15 15:29:57.234
-      Status: syncing
-      Uptime: 4h 59m 12s
+		192.168.1.102:8080 (FOLLOWER)
+			Joined: 2026-01-15 10:31:45.012
+			Last seen: 2026-01-15 15:29:57.234
+			Status: syncing
+			Uptime: 4h 59m 12s
 
 # Подробная информация об узле
 futriix:~> node info 192.168.1.100:8080
 === Node Information ===
-  ID: node-001
-  IP: 192.168.1.100
-  Port: 8080
-  Raft Port: 7000
-  Status: active
-  Role: LEADER
-  
-  Timestamps:
-    Created:    2026-01-15 10:30:45.123
-    Joined:     2026-01-15 10:30:45.123
-    Last seen:  2026-01-15 15:29:59.001
-    Leader since: 2026-01-15 12:15:22.456
-  
-  Metrics:
-    Uptime:     5h 0m 14s
-    Elections:  3
-    Request count: 15234
-    Bytes received: 12.5 MB
-    Bytes sent: 45.2 MB
+	ID: node-001
+	IP: 192.168.1.100
+	Port: 8080
+	Raft Port: 7000
+	Status: active
+	Role: LEADER
+	
+	Timestamps:
+		Created:    2026-01-15 10:30:45.123
+		Joined:     2026-01-15 10:30:45.123
+		Last seen:  2026-01-15 15:29:59.001
+		Leader since: 2026-01-15 12:15:22.456
+	
+	Metrics:
+		Uptime:     5h 0m 14s
+		Elections:  3
+		Request count: 15234
+		Bytes received: 12.5 MB
+		Bytes sent: 45.2 MB
 
 # Проверка здоровья кластера
 futriix:~> cluster health
 === Cluster Health ===
-  Overall score: 95.5
-  Checked at: 2026-01-15 15:30:00.000
-  Recommendation: Cluster is healthy, all systems operational
-  
-  Nodes:
-    192.168.1.100:8080 - active (latency: 1ms, last success: 15:29:59.001)
-    192.168.1.101:8080 - active (latency: 2ms, last success: 15:29:58.456)
-    192.168.1.102:8080 - syncing (latency: 5ms, last success: 15:29:57.234)
+	Overall score: 95.5
+	Checked at: 2026-01-15 15:30:00.000
+	Recommendation: Cluster is healthy, all systems operational
+	
+	Nodes:
+		192.168.1.100:8080 - active (latency: 1ms, last success: 15:29:59.001)
+		192.168.1.101:8080 - active (latency: 2ms, last success: 15:29:58.456)
+		192.168.1.102:8080 - syncing (latency: 5ms, last success: 15:29:57.234)
 ```
 <p align="right">(<a href="#readme-top">К началу</a>)</p>
 
@@ -1405,10 +1433,10 @@ P_reject = f(level) × g(load) × h(time)
 
 Где:
 
-    * P_reject — итоговая вероятность отклонения запроса (0.0 - 1.0)
-    * f(level) — коэффициент на основе уровня перегрузки
-    * g(load) — коэффициент на основе текущей нагрузки
-    * h(time) — коэффициент на основе времени (для защиты от "thundering herd")
+		* P_reject — итоговая вероятность отклонения запроса (0.0 - 1.0)
+		* f(level) — коэффициент на основе уровня перегрузки
+		* g(load) — коэффициент на основе текущей нагрузки
+		* h(time) — коэффициент на основе времени (для защиты от "thundering herd")
 ```
 
 **Компоненты формулы** </br>
@@ -1417,11 +1445,11 @@ P_reject = f(level) × g(load) × h(time)
 
 ```sh
 f(level) = {
-    0.00,  если level = None
-    0.00,  если level = Low      (только задержка)
-    0.30,  если level = Medium
-    0.70,  если level = High
-    0.90,  если level = Critical
+		0.00,  если level = None
+		0.00,  если level = Low      (только задержка)
+		0.30,  если level = Medium
+		0.70,  если level = High
+		0.90,  если level = Critical
 }
 ```
 </br>
@@ -1472,20 +1500,20 @@ load_factor = (cpu_usage + memory_usage) / 2
 
 ```sh
 Вероятность отклонения P_reject
-    |
+		|
 1.0 |                    * * * Critical (90%)
-    |                  *
+		|                  *
 0.9 |                *   High (70%)
-    |              *
+		|              *
 0.7 |            *     Medium (30%)
-    |          *
+		|          *
 0.5 |        *
-    |      *
+		|      *
 0.3 |    *       Low (0% - только задержка)
-    |  *
+		|  *
 0.1 |*
-    |_____________________________ Нагрузка
-    0    0.2   0.4   0.6   0.8   1.0
+		|_____________________________ Нагрузка
+		0    0.2   0.4   0.6   0.8   1.0
 ```
 </br>
 
@@ -1691,40 +1719,40 @@ Idle → Preparing → Migrating → Delta Sync → Validating → Completed
 
 ```toml
 [migration]
-    enabled = true
-    mode = "semi_auto"           # manual, semi_auto, auto
-    
-    [migration.source]
-        name = "dc-primary"
-        endpoint = "https://dc1.futriix.local:8080"
-        timeout_sec = 30
-    
-    [migration.target]
-        name = "dc-secondary"
-        endpoint = "https://dc2.futriix.local:8080"
-        timeout_sec = 30
-    
-    [migration.settings]
-        batch_size = 1000
-        workers = 4
-        compression = "snappy"    # snappy, lz4, zstd
-        resume_enabled = true
-        checkpoint_interval_sec = 30
-        max_retries = 3
-        retry_backoff_sec = 5
-        collections = []
-        exclude_collections = ["temp", "logs"]
-    
-    [migration.delta]
-        enabled = true
-        interval_sec = 60
-        max_lag_sec = 300
-    
-    [migration.validation]
-        enabled = true
-        sample_percent = 10
-        max_errors = 100
-  ```
+		enabled = true
+		mode = "semi_auto"           # manual, semi_auto, auto
+		
+		[migration.source]
+				name = "dc-primary"
+				endpoint = "https://dc1.futriix.local:8080"
+				timeout_sec = 30
+		
+		[migration.target]
+				name = "dc-secondary"
+				endpoint = "https://dc2.futriix.local:8080"
+				timeout_sec = 30
+		
+		[migration.settings]
+				batch_size = 1000
+				workers = 4
+				compression = "snappy"    # snappy, lz4, zstd
+				resume_enabled = true
+				checkpoint_interval_sec = 30
+				max_retries = 3
+				retry_backoff_sec = 5
+				collections = []
+				exclude_collections = ["temp", "logs"]
+		
+		[migration.delta]
+				enabled = true
+				interval_sec = 60
+				max_lag_sec = 300
+		
+		[migration.validation]
+				enabled = true
+				sample_percent = 10
+				max_errors = 100
+	```
 </br>
 </br>
 
@@ -1806,7 +1834,7 @@ Idle → Preparing → Migrating → Delta Sync → Validating → Completed
 | **Таймаут дельта-синхронизации** | Задержка превысила `max_lag_sec` | Увеличение интервала или ручная синхронизация | Настроить `interval_sec` и `max_lag_sec`, проверить пропускную способность канала |
 ---
 
-  **Гарантии целостности**
+	**Гарантии целостности**
 
 * Идемпотентность: Каждая операция может быть повторена без побочных эффектов
 * Контрольные суммы: SHA-256 для каждого документа
@@ -1864,17 +1892,17 @@ futriix:~> export "shop" "shop_backup"
 futriix:~> import "company" "company_backup.msgpack"
 Importing data from company_backup.msgpack to database 'company'...
 ✓ Database 'company' imported successfully from company_backup.msgpack
-  Collections imported: 2
-  Documents imported: 150
-  Documents skipped (already exist): 0
-  Documents failed: 0
+	Collections imported: 2
+	Documents imported: 150
+	Documents skipped (already exist): 0
+	Documents failed: 0
 
 # Импорт в новую базу данных
 futriix:~> import "company_restore" "company_backup.msgpack"
 Created database 'company_restore'
 ✓ Database 'company_restore' imported successfully from company_backup.msgpack
-  Collections imported: 2
-  Documents imported: 150
+	Collections imported: 2
+	Documents imported: 150
 ```
 
 <p align="right">(<a href="#readme-top">К началу</a>)</p>
@@ -1885,89 +1913,89 @@ Created database 'company_restore'
 
  API спроектирован с учётом требований современной веб‑разработки:
 
-  * Поддержка CORS позволяет выполнять запросы к СУБД из браузерных приложений, размещённых на других доменах, без проблем с политикой безопасности браузеров. <br>
-  * Аутентификация по X‑Session‑ID даёт простой и надёжный механизм управления сессиями: клиент получает идентификатор сессии после авторизации, а затем передаёт его в заголовке X-Session-ID для подтверждения прав на выполнение операций. Такой подход хорошо ложится на привычные схемы работы с сессионными токенами и легко встраивается в существующие стеки.<br>
+	* Поддержка CORS позволяет выполнять запросы к СУБД из браузерных приложений, размещённых на других доменах, без проблем с политикой безопасности браузеров. <br>
+	* Аутентификация по X‑Session‑ID даёт простой и надёжный механизм управления сессиями: клиент получает идентификатор сессии после авторизации, а затем передаёт его в заголовке X-Session-ID для подтверждения прав на выполнение операций. Такой подход хорошо ложится на привычные схемы работы с сессионными токенами и легко встраивается в существующие стеки.<br>
 
-  * **Доступны следующие группы endpoints, каждая из которых отвечает за свою область управления:**
+	* **Доступны следующие группы endpoints, каждая из которых отвечает за свою область управления:**
 
-  * **CRUD‑операции над коллекциями** `(/api/db/{db}/{collection})` — полный набор действий для работы с данными: создание, чтение, обновление и удаление документов. Шаблоны URL позволяют адресовать конкретную базу данных и коллекцию, что удобно при мультитенантной архитектуре или при работе с несколькими логическими пространствами данных.
+	* **CRUD‑операции над коллекциями** `(/api/db/{db}/{collection})` — полный набор действий для работы с данными: создание, чтение, обновление и удаление документов. Шаблоны URL позволяют адресовать конкретную базу данных и коллекцию, что удобно при мультитенантной архитектуре или при работе с несколькими логическими пространствами данных.
 
-  * **Управление индексами** `(/api/index/)` — инструменты для создания, изменения и удаления индексов, чтобы гибко настраивать производительность выборки под разные типы запросов.
+	* **Управление индексами** `(/api/index/)` — инструменты для создания, изменения и удаления индексов, чтобы гибко настраивать производительность выборки под разные типы запросов.
 
-  * **Контроль доступа (ACL)** `(/api/acl/)` — настройка правил доступа к объектам СУБД: можно разграничивать права на уровне баз, коллекций, отдельных операций или даже по условиям над данными.
+	* **Контроль доступа (ACL)** `(/api/acl/)` — настройка правил доступа к объектам СУБД: можно разграничивать права на уровне баз, коллекций, отдельных операций или даже по условиям над данными.
 
-  * **Работа с ограничениями** `(/api/constraint/)` — управление декларативными ограничениями целостности (например, enum‑списками, диапазонами, уникальностью и т. п.), которые помогают поддерживать корректность данных на уровне СУБД.
+	* **Работа с ограничениями** `(/api/constraint/)` — управление декларативными ограничениями целостности (например, enum‑списками, диапазонами, уникальностью и т. п.), которые помогают поддерживать корректность данных на уровне СУБД.
 
-  * **Администрирование кластера** `(/api/cluster/)` — операции по управлению топологией кластера: добавление и удаление узлов, перераспределение шардов, мониторинг состояния реплик и консенсуса (в том числе на базе Raft). Это особенно важно при динамическом масштабировании и обслуживании распределённой системы.
+	* **Администрирование кластера** `(/api/cluster/)` — операции по управлению топологией кластера: добавление и удаление узлов, перераспределение шардов, мониторинг состояния реплик и консенсуса (в том числе на базе Raft). Это особенно важно при динамическом масштабировании и обслуживании распределённой системы.
 
 ```sh
 # Аутентификация
 curl -X POST http://localhost:8080/api/auth/login \
-  -H "Content-Type: application/json" \
-  -d '{"username":"admin","password":"admin"}'
+	-H "Content-Type: application/json" \
+	-d '{"username":"admin","password":"admin"}'
 # Response: {"success":true,"data":{"session_id":"abc123"}}
 
 # Вставка документа
 curl -X POST http://localhost:8080/api/db/company/employees \
-  -H "Content-Type: application/json" \
-  -H "X-Session-ID: abc123" \
-  -d '{"name":"API User","position":"Integrator","age":28}'
+	-H "Content-Type: application/json" \
+	-H "X-Session-ID: abc123" \
+	-d '{"name":"API User","position":"Integrator","age":28}'
 # Response: {"success":true,"data":{"status":"inserted"}}
 
 # Получение документа по ID
 curl -X GET "http://localhost:8080/api/db/company/employees/550e8400-e29b-41d4-a716-446655440000" \
-  -H "X-Session-ID: abc123"
+	-H "X-Session-ID: abc123"
 # Response: {"success":true,"data":{"_id":"550e8400-...","fields":{...}}}
 
 # Получение всех документов с пагинацией
 curl -X GET "http://localhost:8080/api/db/company/employees?limit=10&offset=0" \
-  -H "X-Session-ID: abc123"
+	-H "X-Session-ID: abc123"
 
 # Поиск по индексу
 curl -X GET "http://localhost:8080/api/db/company/employees?index=name_idx&value=John%20Doe" \
-  -H "X-Session-ID: abc123"
+	-H "X-Session-ID: abc123"
 
 # Обновление документа
 curl -X PUT http://localhost:8080/api/db/company/employees/550e8400-e29b-41d4-a716-446655440000 \
-  -H "Content-Type: application/json" \
-  -H "X-Session-ID: abc123" \
-  -d '{"age":31,"position":"Senior Developer"}'
+	-H "Content-Type: application/json" \
+	-H "X-Session-ID: abc123" \
+	-d '{"age":31,"position":"Senior Developer"}'
 # Response: {"success":true,"data":{"status":"updated"}}
 
 # Удаление документа
 curl -X DELETE "http://localhost:8080/api/db/company/employees/550e8400-e29b-41d4-a716-446655440000" \
-  -H "X-Session-ID: abc123"
+	-H "X-Session-ID: abc123"
 # Response: {"success":true,"data":{"status":"deleted"}}
 
 # Создание индекса через API
 curl -X POST http://localhost:8080/api/index/company/employees/create \
-  -H "Content-Type: application/json" \
-  -H "X-Session-ID: abc123" \
-  -d '{"name":"email_idx","fields":["email"],"unique":true}'
+	-H "Content-Type: application/json" \
+	-H "X-Session-ID: abc123" \
+	-d '{"name":"email_idx","fields":["email"],"unique":true}'
 
 # Просмотр индексов
 curl -X GET "http://localhost:8080/api/index/company/employees/list" \
-  -H "X-Session-ID: abc123"
+	-H "X-Session-ID: abc123"
 
 # Статус кластера через API
 curl -X GET "http://localhost:8080/api/cluster/status" \
-  -H "X-Session-ID: abc123"
+	-H "X-Session-ID: abc123"
 
 # Создание пользователя через API
 curl -X POST http://localhost:8080/api/acl/user/newuser \
-  -H "Content-Type: application/json" \
-  -H "X-Session-ID: abc123" \
-  -d '{"password":"secret","roles":["reader"]}'
+	-H "Content-Type: application/json" \
+	-H "X-Session-ID: abc123" \
+	-d '{"password":"secret","roles":["reader"]}'
 
 # Назначение прав через API
 curl -X POST "http://localhost:8080/api/acl/grant/reader/rw" \
-  -H "X-Session-ID: abc123"
+	-H "X-Session-ID: abc123"
 
 # Создание триггера через API
 curl -X POST http://localhost:8080/api/trigger/company/employees/create \
-  -H "Content-Type: application/json" \
-  -H "X-Session-ID: abc123" \
-  -d '{"name":"audit","event":"AFTER_INSERT","action":"log"}'
+	-H "Content-Type: application/json" \
+	-H "X-Session-ID: abc123" \
+	-d '{"name":"audit","event":"AFTER_INSERT","action":"log"}'
 ```
 
 <p align="right">(<a href="#readme-top">К началу</a>)</p>
@@ -1983,27 +2011,27 @@ curl -X POST http://localhost:8080/api/trigger/company/employees/create \
 # Просмотр информации о системе плагинов
 futriix:~> plugin status
 === Plugin System Status ===
-  Enabled: true
-  Plugins Directory: ./plugins
-  Loaded Plugins: 3
-  Total Executions: 125
+	Enabled: true
+	Plugins Directory: ./plugins
+	Loaded Plugins: 3
+	Total Executions: 125
 
 # Список загруженных плагинов
 futriix:~> plugin list
 === Loaded Plugins ===
-  validation (v1.0.0) by admin - Document validation rules
-     Status: RUNNING
-  audit (v2.1.0) by security - Audit trail logger
-     Status: RUNNING
-  notify (v1.2.0) by devops - Email and webhook notifications
-     Status: RUNNING
+	validation (v1.0.0) by admin - Document validation rules
+		 Status: RUNNING
+	audit (v2.1.0) by security - Audit trail logger
+		 Status: RUNNING
+	notify (v1.2.0) by devops - Email and webhook notifications
+		 Status: RUNNING
 
 # Загрузка плагина из файла
 futriix:~> plugin load email_notifier ./plugins/email_notifier.lua
 ✓ Plugin 'email_notifier' loaded successfully
-  Version: 1.0.0
-  Author: admin
-  Description: Send email notifications on database events
+	Version: 1.0.0
+	Author: admin
+	Description: Send email notifications on database events
 
 # Запуск/остановка плагина
 futriix:~> plugin start email_notifier
@@ -2029,90 +2057,90 @@ description = "Document validation rules for employees collection"
 
 -- Функция инициализации
 function on_load()
-    plugin_log("info", "Validation plugin loaded")
-    return true
+		plugin_log("info", "Validation plugin loaded")
+		return true
 end
 
 -- Функция запуска
 function on_start()
-    plugin_log("info", "Validation plugin started")
-    return true
+		plugin_log("info", "Validation plugin started")
+		return true
 end
 
 -- Функция остановки
 function on_stop()
-    plugin_log("info", "Validation plugin stopped")
-    return true
+		plugin_log("info", "Validation plugin stopped")
+		return true
 end
 
 -- Функция выгрузки
 function on_unload()
-    plugin_log("info", "Validation plugin unloaded")
-    return true
+		plugin_log("info", "Validation plugin unloaded")
+		return true
 end
 
 -- Обработчик событий
 function on_event(event)
-    plugin_log("debug", "Received event: " .. event.type)
-    
-    if event.type == "BEFORE_INSERT" then
-        return validate_document(event.data)
-    end
-    
-    return true
+		plugin_log("debug", "Received event: " .. event.type)
+		
+		if event.type == "BEFORE_INSERT" then
+				return validate_document(event.data)
+		end
+		
+		return true
 end
 
 -- Функция валидации документа
 function validate_document(doc)
-    -- Проверка обязательных полей
-    if doc.name == nil or doc.name == "" then
-        plugin_log("error", "Document missing required field: name")
-        return false, "Field 'name' is required"
-    end
-    
-    -- Проверка возраста
-    if doc.age ~= nil then
-        if doc.age < 18 then
-            plugin_log("warn", "Age validation failed: " .. doc.age)
-            return false, "Employee must be at least 18 years old"
-        end
-        if doc.age > 65 then
-            plugin_log("warn", "Age validation failed: " .. doc.age)
-            return false, "Employee cannot be older than 65 years"
-        end
-    end
-    
-    -- Проверка email
-    if doc.email ~= nil then
-        if string.match(doc.email, "^[%w._-]+@[%w._-]+%.[%w]+$") == nil then
-            plugin_log("error", "Invalid email format: " .. doc.email)
-            return false, "Invalid email format"
-        end
-    end
-    
-    -- Проверка зарплаты
-    if doc.salary ~= nil then
-        if doc.salary < 30000 then
-            plugin_log("warn", "Salary below minimum: " .. doc.salary)
-            return false, "Salary must be at least 30000"
-        end
-    end
-    
-    plugin_log("info", "Document validation passed for: " .. doc.name)
-    return true
+		-- Проверка обязательных полей
+		if doc.name == nil or doc.name == "" then
+				plugin_log("error", "Document missing required field: name")
+				return false, "Field 'name' is required"
+		end
+		
+		-- Проверка возраста
+		if doc.age ~= nil then
+				if doc.age < 18 then
+						plugin_log("warn", "Age validation failed: " .. doc.age)
+						return false, "Employee must be at least 18 years old"
+				end
+				if doc.age > 65 then
+						plugin_log("warn", "Age validation failed: " .. doc.age)
+						return false, "Employee cannot be older than 65 years"
+				end
+		end
+		
+		-- Проверка email
+		if doc.email ~= nil then
+				if string.match(doc.email, "^[%w._-]+@[%w._-]+%.[%w]+$") == nil then
+						plugin_log("error", "Invalid email format: " .. doc.email)
+						return false, "Invalid email format"
+				end
+		end
+		
+		-- Проверка зарплаты
+		if doc.salary ~= nil then
+				if doc.salary < 30000 then
+						plugin_log("warn", "Salary below minimum: " .. doc.salary)
+						return false, "Salary must be at least 30000"
+				end
+		end
+		
+		plugin_log("info", "Document validation passed for: " .. doc.name)
+		return true
 end
 
 -- Пользовательская функция для массовой валидации
 function validate_collection(collection_name)
-    local coll = get_collection("company", collection_name)
-    if coll == nil then
-        plugin_log("error", "Collection not found: " .. collection_name)
-        return 0
-    end
-    
-    -- Здесь можно реализовать массовую валидацию
-    plugin_log("info", "Validating collection: " .. collection_name)
-    return 0
+		local coll = get_collection("company", collection_name)
+		if coll == nil then
+				plugin_log("error", "Collection not found: " .. collection_name)
+				return 0
+		end
+		
+		-- Здесь можно реализовать массовую валидацию
+		plugin_log("info", "Validating collection: " .. collection_name)
+		return 0
 end
 ```
 
@@ -2132,9 +2160,9 @@ futriix:~> create collection employees
 # Загрузка и запуск плагина валидации
 futriix:~> plugin load validation ./plugins/validation.lua
 ✓ Plugin 'validation' loaded successfully
-  Version: 1.0.0
-  Author: admin
-  Description: Document validation rules for employees collection
+	Version: 1.0.0
+	Author: admin
+	Description: Document validation rules for employees collection
 
 futriix:~> plugin start validation
 ✓ Plugin 'validation' started
@@ -2161,23 +2189,23 @@ futriix:~> plugin call validation validate_collection employees
 ```sh
 # Получение списка плагинов через API
 curl -X GET "http://localhost:8080/api/plugin/list" \
-  -H "X-Session-ID: abc123"
+	-H "X-Session-ID: abc123"
 
 # Загрузка плагина через API
 curl -X POST http://localhost:8080/api/plugin/load \
-  -H "Content-Type: application/json" \
-  -H "X-Session-ID: abc123" \
-  -d '{"name":"validation","path":"./plugins/validation.lua"}'
+	-H "Content-Type: application/json" \
+	-H "X-Session-ID: abc123" \
+	-d '{"name":"validation","path":"./plugins/validation.lua"}'
 
 # Запуск плагина через API
 curl -X POST "http://localhost:8080/api/plugin/start/validation" \
-  -H "X-Session-ID: abc123"
+	-H "X-Session-ID: abc123"
 
 # Выполнение функции плагина через API
 curl -X POST http://localhost:8080/api/plugin/call \
-  -H "Content-Type: application/json" \
-  -H "X-Session-ID: abc123" \
-  -d '{"plugin":"validation","function":"validate_collection","args":["employees"]}'
+	-H "Content-Type: application/json" \
+	-H "X-Session-ID: abc123" \
+	-d '{"plugin":"validation","function":"validate_collection","args":["employees"]}'
 ```
 
 **Плагины как инструмент написания движков для futriix**
@@ -2200,25 +2228,25 @@ plugins/
 
 ```sh
 {
-    "name": "timescale_engine",
-    "version": "1.0.0",
-    "author": "Example Corp",
-    "description": "Time-series storage engine with automatic partitioning",
-    "api_version": "1.0",
-    "engine_type": "timescale",
-    "min_go_version": "1.21",
-    "dependencies": [
-        {
-            "name": "base_engine",
-            "version": "2.0.0",
-            "min_version": "2.0.0",
-            "max_version": "3.0.0",
-            "optional": false
-        }
-    ],
-    "entry_point": "create_engine",
-    "created_at": 1704067200000,
-    "updated_at": 1704153600000
+		"name": "timescale_engine",
+		"version": "1.0.0",
+		"author": "Example Corp",
+		"description": "Time-series storage engine with automatic partitioning",
+		"api_version": "1.0",
+		"engine_type": "timescale",
+		"min_go_version": "1.21",
+		"dependencies": [
+				{
+						"name": "base_engine",
+						"version": "2.0.0",
+						"min_version": "2.0.0",
+						"max_version": "3.0.0",
+						"optional": false
+				}
+		],
+		"entry_point": "create_engine",
+		"created_at": 1704067200000,
+		"updated_at": 1704153600000
 }
 
 ```
@@ -2261,11 +2289,11 @@ plugins/
 1. Обнаружение: Система сканирует директорию плагинов и находит Lua-файлы
 2. Чтение манифеста: При наличии JSON-файла с тем же именем система загружает и парсит его.
 
-  Валидация:
+	Валидация:
 
-  * Проверяется наличие обязательных полей (name, version, api_version)
-  * Проверяется, что engine_type не пуст (для движков)
-  * Проверяется совместимость версий зависимостей
+	* Проверяется наличие обязательных полей (name, version, api_version)
+	* Проверяется, что engine_type не пуст (для движков)
+	* Проверяется совместимость версий зависимостей
 
 3. Регистрация движка: Если engine_type указан, система автоматически регистрирует плагин в EngineRegistry под этим именем
 4. Загрузка Lua-скрипта: Выполняется Lua-скрипт, который должен экспортировать фабричную функцию (по умолчанию create_engine)
@@ -2277,22 +2305,22 @@ plugins/
 
 ```sh
 {
-    "name": "ts_engine",
-    "version": "1.2.0",
-    "author": "Futriix Team",
-    "description": "High-performance time-series storage engine with automatic downsampling",
-    "api_version": "1.0",
-    "engine_type": "timeseries",
-    "dependencies": [
-        {
-            "name": "compression_plugin",
-            "min_version": "1.0.0",
-            "optional": false
-        }
-    ],
-    "entry_point": "new_timeseries_engine",
-    "created_at": 1704067200000,
-    "updated_at": 1704153600000
+		"name": "ts_engine",
+		"version": "1.2.0",
+		"author": "Futriix Team",
+		"description": "High-performance time-series storage engine with automatic downsampling",
+		"api_version": "1.0",
+		"engine_type": "timeseries",
+		"dependencies": [
+				{
+						"name": "compression_plugin",
+						"min_version": "1.0.0",
+						"optional": false
+				}
+		],
+		"entry_point": "new_timeseries_engine",
+		"created_at": 1704067200000,
+		"updated_at": 1704153600000
 }
 ```
 
@@ -2365,27 +2393,27 @@ futriix:~> acl grant employees admin rwda
 # Просмотр информации о системе плагинов
 futriix:~> plugin status
 === Plugin System Status ===
-  Enabled: true
-  Plugins Directory: ./plugins
-  Loaded Plugins: 3
-  Total Executions: 125
+	Enabled: true
+	Plugins Directory: ./plugins
+	Loaded Plugins: 3
+	Total Executions: 125
 
 # Список загруженных плагинов
 futriix:~> plugin list
 === Loaded Plugins ===
-  validation (v1.0.0) by admin - Document validation rules
-     Status: RUNNING
-  audit (v2.1.0) by security - Audit trail logger
-     Status: RUNNING
-  notify (v1.2.0) by devops - Email and webhook notifications
-     Status: RUNNING
+	validation (v1.0.0) by admin - Document validation rules
+		 Status: RUNNING
+	audit (v2.1.0) by security - Audit trail logger
+		 Status: RUNNING
+	notify (v1.2.0) by devops - Email and webhook notifications
+		 Status: RUNNING
 
 # Загрузка плагина из файла
 futriix:~> plugin load email_notifier ./plugins/email_notifier.lua
 ✓ Plugin 'email_notifier' loaded successfully
-  Version: 1.0.0
-  Author: admin
-  Description: Send email notifications on database events
+	Version: 1.0.0
+	Author: admin
+	Description: Send email notifications on database events
 
 # Запуск/остановка плагина
 futriix:~> plugin start email_notifier
@@ -2411,90 +2439,90 @@ description = "Document validation rules for employees collection"
 
 -- Функция инициализации
 function on_load()
-    plugin_log("info", "Validation plugin loaded")
-    return true
+		plugin_log("info", "Validation plugin loaded")
+		return true
 end
 
 -- Функция запуска
 function on_start()
-    plugin_log("info", "Validation plugin started")
-    return true
+		plugin_log("info", "Validation plugin started")
+		return true
 end
 
 -- Функция остановки
 function on_stop()
-    plugin_log("info", "Validation plugin stopped")
-    return true
+		plugin_log("info", "Validation plugin stopped")
+		return true
 end
 
 -- Функция выгрузки
 function on_unload()
-    plugin_log("info", "Validation plugin unloaded")
-    return true
+		plugin_log("info", "Validation plugin unloaded")
+		return true
 end
 
 -- Обработчик событий
 function on_event(event)
-    plugin_log("debug", "Received event: " .. event.type)
-    
-    if event.type == "BEFORE_INSERT" then
-        return validate_document(event.data)
-    end
-    
-    return true
+		plugin_log("debug", "Received event: " .. event.type)
+		
+		if event.type == "BEFORE_INSERT" then
+				return validate_document(event.data)
+		end
+		
+		return true
 end
 
 -- Функция валидации документа
 function validate_document(doc)
-    -- Проверка обязательных полей
-    if doc.name == nil or doc.name == "" then
-        plugin_log("error", "Document missing required field: name")
-        return false, "Field 'name' is required"
-    end
-    
-    -- Проверка возраста
-    if doc.age ~= nil then
-        if doc.age < 18 then
-            plugin_log("warn", "Age validation failed: " .. doc.age)
-            return false, "Employee must be at least 18 years old"
-        end
-        if doc.age > 65 then
-            plugin_log("warn", "Age validation failed: " .. doc.age)
-            return false, "Employee cannot be older than 65 years"
-        end
-    end
-    
-    -- Проверка email
-    if doc.email ~= nil then
-        if string.match(doc.email, "^[%w._-]+@[%w._-]+%.[%w]+$") == nil then
-            plugin_log("error", "Invalid email format: " .. doc.email)
-            return false, "Invalid email format"
-        end
-    end
-    
-    -- Проверка зарплаты
-    if doc.salary ~= nil then
-        if doc.salary < 30000 then
-            plugin_log("warn", "Salary below minimum: " .. doc.salary)
-            return false, "Salary must be at least 30000"
-        end
-    end
-    
-    plugin_log("info", "Document validation passed for: " .. doc.name)
-    return true
+		-- Проверка обязательных полей
+		if doc.name == nil or doc.name == "" then
+				plugin_log("error", "Document missing required field: name")
+				return false, "Field 'name' is required"
+		end
+		
+		-- Проверка возраста
+		if doc.age ~= nil then
+				if doc.age < 18 then
+						plugin_log("warn", "Age validation failed: " .. doc.age)
+						return false, "Employee must be at least 18 years old"
+				end
+				if doc.age > 65 then
+						plugin_log("warn", "Age validation failed: " .. doc.age)
+						return false, "Employee cannot be older than 65 years"
+				end
+		end
+		
+		-- Проверка email
+		if doc.email ~= nil then
+				if string.match(doc.email, "^[%w._-]+@[%w._-]+%.[%w]+$") == nil then
+						plugin_log("error", "Invalid email format: " .. doc.email)
+						return false, "Invalid email format"
+				end
+		end
+		
+		-- Проверка зарплаты
+		if doc.salary ~= nil then
+				if doc.salary < 30000 then
+						plugin_log("warn", "Salary below minimum: " .. doc.salary)
+						return false, "Salary must be at least 30000"
+				end
+		end
+		
+		plugin_log("info", "Document validation passed for: " .. doc.name)
+		return true
 end
 
 -- Пользовательская функция для массовой валидации
 function validate_collection(collection_name)
-    local coll = get_collection("company", collection_name)
-    if coll == nil then
-        plugin_log("error", "Collection not found: " .. collection_name)
-        return 0
-    end
-    
-    -- Здесь можно реализовать массовую валидацию
-    plugin_log("info", "Validating collection: " .. collection_name)
-    return 0
+		local coll = get_collection("company", collection_name)
+		if coll == nil then
+				plugin_log("error", "Collection not found: " .. collection_name)
+				return 0
+		end
+		
+		-- Здесь можно реализовать массовую валидацию
+		plugin_log("info", "Validating collection: " .. collection_name)
+		return 0
 end
 ```
 
@@ -2514,9 +2542,9 @@ futriix:~> create collection employees
 # Загрузка и запуск плагина валидации
 futriix:~> plugin load validation ./plugins/validation.lua
 ✓ Plugin 'validation' loaded successfully
-  Version: 1.0.0
-  Author: admin
-  Description: Document validation rules for employees collection
+	Version: 1.0.0
+	Author: admin
+	Description: Document validation rules for employees collection
 
 futriix:~> plugin start validation
 ✓ Plugin 'validation' started
@@ -2543,23 +2571,23 @@ futriix:~> plugin call validation validate_collection employees
 ```sh
 # Получение списка плагинов через API
 curl -X GET "http://localhost:8080/api/plugin/list" \
-  -H "X-Session-ID: abc123"
+	-H "X-Session-ID: abc123"
 
 # Загрузка плагина через API
 curl -X POST http://localhost:8080/api/plugin/load \
-  -H "Content-Type: application/json" \
-  -H "X-Session-ID: abc123" \
-  -d '{"name":"validation","path":"./plugins/validation.lua"}'
+	-H "Content-Type: application/json" \
+	-H "X-Session-ID: abc123" \
+	-d '{"name":"validation","path":"./plugins/validation.lua"}'
 
 # Запуск плагина через API
 curl -X POST "http://localhost:8080/api/plugin/start/validation" \
-  -H "X-Session-ID: abc123"
+	-H "X-Session-ID: abc123"
 
 # Выполнение функции плагина через API
 curl -X POST http://localhost:8080/api/plugin/call \
-  -H "Content-Type: application/json" \
-  -H "X-Session-ID: abc123" \
-  -d '{"plugin":"validation","function":"validate_collection","args":["employees"]}'
+	-H "Content-Type: application/json" \
+	-H "X-Session-ID: abc123" \
+	-d '{"plugin":"validation","function":"validate_collection","args":["employees"]}'
 ```
 
 **Плагины как инструмент написания движков для futriix**
@@ -2582,25 +2610,25 @@ plugins/
 
 ```sh
 {
-    "name": "timescale_engine",
-    "version": "1.0.0",
-    "author": "Example Corp",
-    "description": "Time-series storage engine with automatic partitioning",
-    "api_version": "1.0",
-    "engine_type": "timescale",
-    "min_go_version": "1.21",
-    "dependencies": [
-        {
-            "name": "base_engine",
-            "version": "2.0.0",
-            "min_version": "2.0.0",
-            "max_version": "3.0.0",
-            "optional": false
-        }
-    ],
-    "entry_point": "create_engine",
-    "created_at": 1704067200000,
-    "updated_at": 1704153600000
+		"name": "timescale_engine",
+		"version": "1.0.0",
+		"author": "Example Corp",
+		"description": "Time-series storage engine with automatic partitioning",
+		"api_version": "1.0",
+		"engine_type": "timescale",
+		"min_go_version": "1.21",
+		"dependencies": [
+				{
+						"name": "base_engine",
+						"version": "2.0.0",
+						"min_version": "2.0.0",
+						"max_version": "3.0.0",
+						"optional": false
+				}
+		],
+		"entry_point": "create_engine",
+		"created_at": 1704067200000,
+		"updated_at": 1704153600000
 }
 
 ```
@@ -2643,11 +2671,11 @@ plugins/
 1. Обнаружение: Система сканирует директорию плагинов и находит Lua-файлы
 2. Чтение манифеста: При наличии JSON-файла с тем же именем система загружает и парсит его.
 
-  Валидация:
+	Валидация:
 
-  * Проверяется наличие обязательных полей (name, version, api_version)
-  * Проверяется, что engine_type не пуст (для движков)
-  * Проверяется совместимость версий зависимостей
+	* Проверяется наличие обязательных полей (name, version, api_version)
+	* Проверяется, что engine_type не пуст (для движков)
+	* Проверяется совместимость версий зависимостей
 
 3. Регистрация движка: Если engine_type указан, система автоматически регистрирует плагин в EngineRegistry под этим именем
 4. Загрузка Lua-скрипта: Выполняется Lua-скрипт, который должен экспортировать фабричную функцию (по умолчанию create_engine)
@@ -2659,22 +2687,22 @@ plugins/
 
 ```sh
 {
-    "name": "ts_engine",
-    "version": "1.2.0",
-    "author": "Futriix Team",
-    "description": "High-performance time-series storage engine with automatic downsampling",
-    "api_version": "1.0",
-    "engine_type": "timeseries",
-    "dependencies": [
-        {
-            "name": "compression_plugin",
-            "min_version": "1.0.0",
-            "optional": false
-        }
-    ],
-    "entry_point": "new_timeseries_engine",
-    "created_at": 1704067200000,
-    "updated_at": 1704153600000
+		"name": "ts_engine",
+		"version": "1.2.0",
+		"author": "Futriix Team",
+		"description": "High-performance time-series storage engine with automatic downsampling",
+		"api_version": "1.0",
+		"engine_type": "timeseries",
+		"dependencies": [
+				{
+						"name": "compression_plugin",
+						"min_version": "1.0.0",
+						"optional": false
+				}
+		],
+		"entry_point": "new_timeseries_engine",
+		"created_at": 1704067200000,
+		"updated_at": 1704153600000
 }
 ```
 
@@ -2722,18 +2750,18 @@ futriix:~> create trigger employees audit BEFORE_UPDATE modify --set modified_by
 # Просмотр всех триггеров коллекции
 futriix:~> show triggers employees
 === Triggers on collection 'employees': ===
-  audit_log (AFTER_INSERT) - enabled [log]
-      Operations:
-        - log:  = 
-  set_timestamp (BEFORE_INSERT) - enabled [modify]
-      Operations:
-        - set: updated_at = $$NOW
-  protect_active (BEFORE_DELETE) - enabled [abort]
-      Condition: status eq active
-  audit (BEFORE_UPDATE) - enabled [modify]
-      Operations:
-        - set: modified_by = $$USER
-        - set: modified_at = $$NOW
+	audit_log (AFTER_INSERT) - enabled [log]
+			Operations:
+				- log:  = 
+	set_timestamp (BEFORE_INSERT) - enabled [modify]
+			Operations:
+				- set: updated_at = $$NOW
+	protect_active (BEFORE_DELETE) - enabled [abort]
+			Condition: status eq active
+	audit (BEFORE_UPDATE) - enabled [modify]
+			Operations:
+				- set: modified_by = $$USER
+				- set: modified_at = $$NOW
 
 # Включение/отключение триггера
 futriix:~> disable trigger employees BEFORE_INSERT set_timestamp
@@ -2767,28 +2795,28 @@ futriix:~> drop trigger employees BEFORE_INSERT set_timestamp
 # Просмотр конфигурации сжатия
 futriix:~> compression config
 === Compression Configuration ===
-  Enabled:    true
-  Algorithm:  snappy
-  Level:      3
-  Min Size:   1 KB
+	Enabled:    true
+	Algorithm:  snappy
+	Level:      3
+	Min Size:   1 KB
 
 Available Algorithms:
-  snappy  - Fast compression/decompression, good balance (default)
-  lz4     - Extremely fast, lower compression ratio
-  zstd    - High compression ratio, slower
+	snappy  - Fast compression/decompression, good balance (default)
+	lz4     - Extremely fast, lower compression ratio
+	zstd    - High compression ratio, slower
 
 # Просмотр статистики сжатия
 futriix:~> compression stats
 === Compression Statistics ===
-  Total Documents:      1250
-  Compressed Documents: 890
-  Compression Rate:     71.20%
-  Size Reduction:       45.30%
-  Original Size:        15.2 MB
-  Compressed Size:      8.3 MB
-  Algorithm:            snappy
-  Compression Level:    3
-  Min Size Threshold:   1 KB
+	Total Documents:      1250
+	Compressed Documents: 890
+	Compression Rate:     71.20%
+	Size Reduction:       45.30%
+	Original Size:        15.2 MB
+	Compressed Size:      8.3 MB
+	Algorithm:            snappy
+	Compression Level:    3
+	Min Size Threshold:   1 KB
 
 # Ручное сжатие коллекции
 futriix:~> compress collection employees
@@ -2798,10 +2826,10 @@ Compressing collection 'employees'...
 # Просмотр информации о сжатии документа
 futriix:~> doc compression employees 550e8400-e29b-41d4-a716-446655440000
 === Compression Info for Document: 550e8400-e29b-41d4-a716-446655440000 ===
-  Compressed:     true
-  Ratio:          35.20%
-  Original Size:  2.5 KB
-  Current Size:   1.6 KB
+	Compressed:     true
+	Ratio:          35.20%
+	Original Size:  2.5 KB
+	Current Size:   1.6 KB
 ```
 
 <p align="right">(<a href="#readme-top">К началу</a>)</p>
