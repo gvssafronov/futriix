@@ -16,7 +16,7 @@
   </a>
 
   <p align="center">
-  <h3> <b>futriix — легковесная распределённая in-memory СУБД на Go без блокировок с поддержкой Lua‑плагинов,оптимизированная для Illumos/OpenIndiana/Solaris)</b> <br></h3>
+  <h3> <b>futriix — легковесная распределённая in-memory СУБД на Go без блокировок с поддержкой Lua‑плагинов,оптимизированная для систем семейства Linux/Illumos/OpenIndiana/Solaris)</b> <br></h3>
     <br />
     <br />
   <!--   <a href="">Сообщить об ошибке</a> 
