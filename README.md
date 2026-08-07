@@ -2623,7 +2623,7 @@ futriix:~> doc compression employees 550e8400-e29b-41d4-a716-446655440000
 
 Обращаем ваше внимание, что письма без четко сформулированной темы, вопроса или предложения рассматриваться не будут. 
 
-Григорий Сафронов - [E-mail](gvsafronov@yandex.ru) <br>
-Сообщество - [Сообщество Futriix](https://source.futriix.ru/gvsafronov/futriix/issues/new/choose)
+**Григорий Сафронов** - [E-mail](gvsafronov@yandex.ru) <br>
+**Сообщество** - [Сообщество Futriix](https://source.futriix.ru/gvsafronov/futriix/issues/new/choose)
 
 <p align="right">(<a href="#readme-top">К началу</a>)</p>
