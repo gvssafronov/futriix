@@ -429,13 +429,13 @@ Raft-лог (raft_data/)
 
 **Способы изменения:**
 
-	* **REPL** — config set cluster.heartbeat_timeout_ms 2000
+* **REPL** — config set cluster.heartbeat_timeout_ms 2000
 
-	* **HTTP API** — POST /api/v1/config
+* **HTTP API** — POST /api/v1/config
 
-	* **CLI** — futriix config set --key=... --value=...
+* **CLI** — futriix config set --key=... --value=...
 
-	* **Подписка** — компоненты могут отслеживать изменения в реальном времени
+* **Подписка** — компоненты могут отслеживать изменения в реальном времени
 
 <br>
 <br>
