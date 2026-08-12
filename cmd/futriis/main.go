@@ -85,7 +85,7 @@ func main() {
     aclManager := acl.NewACLManager()
     logger.Info("ACL manager initialized")
 
-    // Исправлено: передаём store как второй аргумент
+    // Передаём store как второй аргумент
     raftCoordinator, err := cluster.NewRaftCoordinator(cfg, store, logger)
     if err != nil {
         logger.Error("Failed to start Raft coordinator: " + err.Error())
@@ -185,7 +185,7 @@ func main() {
 
     node := cluster.NewNode(cfg.Cluster.NodeIP, cfg.Cluster.NodePort, store, logger)
     
-    // Исправлено: объявляем переменную maxRetries здесь, чтобы она была доступна
+    // Объявляем переменную maxRetries здесь, чтобы она была доступна
     maxRetries := 5
     var registerErr error
     for i := 0; i < maxRetries; i++ {
@@ -205,7 +205,7 @@ func main() {
         os.Exit(1)
     }
 
-    // Исправлено: передаём отдельные параметры из конфигурации плагинов
+    // Передаём отдельные параметры из конфигурации плагинов
     pluginManager := plugin.NewPluginManager(
         cfg.Plugins.ScriptDir,
         logger,
