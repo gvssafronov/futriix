@@ -1,4 +1,4 @@
-# futriix — lightweight distributed in-memory DBMS in Go without locks, with Lua plugin support, optimized for Linux/Illumos/OpenIndiana/Solaris systems
+## futriix — lightweight distributed in-memory DBMS in Go without locks, with Lua plugin support, optimized for Linux/Illumos/OpenIndiana/Solaris systems
 
 <a id="readme-top"></a>
 
