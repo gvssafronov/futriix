@@ -857,6 +857,7 @@ func (pm *PersistenceManager) LoadDatabase(dbName string) error {
 }
 
 // applyWALEntry применяет одну запись WAL к базе данных
+// TransactionCommitted = 1 (определено в transactions.go)
 func (pm *PersistenceManager) applyWALEntry(db *Database, entry WALEntry) error {
     // Проверяем тип записи (1 = Transaction)
     if entry.Type != "1" {
@@ -882,12 +883,13 @@ func (pm *PersistenceManager) applyWALEntry(db *Database, entry WALEntry) error 
     }
 
     // Применяем только закоммиченные транзакции (state = 1)
-    if txRecord.State != 1 { // TransactionCommitted
+    // TransactionCommitted = 1 (определено в transactions.go через iota)
+    if txRecord.State != 1 {
         return nil
     }
 
     for _, op := range txRecord.Operations {
-        if op.Database != db.name {
+        if op.Database != db.Name() {
             continue
         }
 
