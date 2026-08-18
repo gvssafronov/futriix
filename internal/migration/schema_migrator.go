@@ -225,6 +225,7 @@ func (sm *SchemaMigrator) createDefaultSchema() {
         UpdatedAt: time.Now().UnixMilli(),
     }
     
+    sm.currentVersion = "1.0.0"
     sm.saveSchema()
 }
 
@@ -388,7 +389,13 @@ func (sm *SchemaMigrator) MigrateSchema(targetVersion string) error {
     }
     
     // Начинаем транзакцию для миграции
+    // Используем storage.BeginTransaction() из пакета storage
     tx := storage.BeginTransaction()
+    if tx == nil {
+        return fmt.Errorf("failed to begin transaction")
+    }
+    
+    // Обработка паники и откат транзакции
     defer func() {
         if r := recover(); r != nil {
             storage.AbortCurrentTransaction()
@@ -437,12 +444,17 @@ func (sm *SchemaMigrator) MigrateSchema(targetVersion string) error {
         return fmt.Errorf("failed to save schema: %v", err)
     }
     
+    // Сохраняем применённые миграции
+    if err := sm.saveAppliedMigrations(); err != nil {
+        storage.AbortCurrentTransaction()
+        return fmt.Errorf("failed to save applied migrations: %v", err)
+    }
+    
     // Коммитим транзакцию
     if err := storage.CommitCurrentTransaction(); err != nil {
         return fmt.Errorf("failed to commit schema migration: %v", err)
     }
     
-    sm.saveAppliedMigrations()
     sm.currentVersion = targetVersion
     
     if sm.logger != nil {
