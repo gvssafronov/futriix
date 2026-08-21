@@ -43,7 +43,7 @@
 > **ALPHA VERSION**
 > The project is stable enough in test scenarios, but it is categorically not recommended for production use until version 3.0 is released. We are open to suggestions and very grateful for feedback!
 
-**futriix** is a lightweight distributed NoSQL DBMS written in Go with a MongoDB-compatible interface. It operates in memory (in-memory), utilizes lock-free and wait-free non-blocking data structures, and relies on the Raft consensus algorithm, providing predictable performance under high loads.
+**futriix** is a lightweight distributed NoSQL DBMS written in Go with a MongoDB-compatible interface. It operates in memory (in-memory), utilizes lock-free and wait-free non-blocking s, and relies on the Raft consensus algorithm, providing predictable performance under high loads.
 
 This is an **HTAP system**: it combines OLTP (with ACID transactions) and OLAP (via indexes, triggers, Lua plugins, and analytical functions) to process and analyze data almost in real time.
 
@@ -150,7 +150,7 @@ This section lists the primary algorithms and data structures utilized in the fu
 | :--- | :--- | :--- |
 | **Storage** | `sync.Map` | Concurrent hash map for database storage, provides wait-free reads and writes. |
 | | Atomic counters (`atomic.Int64`) | For tracking the total number of documents without locking. |
-| **Database** | `sync.Map` of collections | Analogous to a slice in relational DBMS. |
+| **Database** | `sync.Map` of collections | A synonym for "database" in RDBMS. |
 | | Mutexes (`sync.RWMutex`) | For structural modification operations (creating/deleting collections). |
 | **Collection** | `sync.Map` of documents | Key: document ID, value: pointer to `Document`. |
 | | `sync.Map` of indexes | Separate storage for inverted indexes. |
