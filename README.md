@@ -126,7 +126,7 @@ All additional software (including the project compilation script `build.sh`) is
 
 While `futriix` maintains cross-platform compatibility and fully supports Linux, **Illumos (OpenIndiana)** is chosen as the primary target platform. For an in-memory NoSQL DBMS operating within Closed Software Environments (CSE / ЗПС), general-purpose operating systems like Linux often introduce resource jitter and architectural overhead. Illumos provides a mission-critical foundation built on strict determinism and textbook system design.
 
-Key architectural reasons for prioritizing the Illumos kernel include:
+**Key architectural reasons for prioritizing the Illumos kernel include:**
 
 * **Predictable Kernel Determinism & Real-Time Scheduling:** Unlike the Linux Completely Fair Scheduler (CFS/EEVDF), which balances throughput and interactivity for general workloads, the Illumos dispatcher guarantees rigid, deterministic CPU resource allocation. This eliminates latency spikes (jitter) which are fatal for wait-free/lock-free in-memory transaction processing.
 * **Scalable Event Ports (`port_create`):** For asynchronous, high-concurrency I/O, `futriix` leverages Illumos Event Ports rather than Linux `epoll`. Architectural advantages of Event Ports include native mitigation of the "thundering herd" problem at the kernel level and superior cache-locality when driving thread pools.
