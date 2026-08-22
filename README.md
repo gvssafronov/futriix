@@ -12,30 +12,31 @@
 1. [About the Project](#about-the-project)
 2. [License](#license)
 3. [Glossary](#glossary)
-4. [Architectural Notes and Security Proposals](#architectural-notes-and-security-proposals)
-5. [Algorithms and Data Structures](#algorithms-and-data-structures)
-6. [System Requirements](#system-requirements)
-7. [Configuration File](#configuration-file)
-8. [Quick Start](#quick-start)
-9. [Logging](#logging)
-10. [Testing](#testing)
-11. [CRUD Operations](#crud-operations)
-12. [Indexes](#indexes)
-13. [Transactions](#transactions)
-14. [Clustering and Sharding](#clustering-and-sharding)
-15. [Backpressure](#backpressure)
-16. [Geo-Distributed Migration](#geo-distributed-migration)
-17. [Constraints](#constraints)
-18. [Import-Export](#import-export)
-19. [HTTP API](#http-api)
-20. [Access Control](#access-control)
-21. [Lua Plugins](#lua-plugins)
-22. [Triggers](#triggers)
-23. [Data Compression](#data-compression)
-24. [Graphical User Interface](#graphical-user-interface)
-25. [FAQ](#faq)
-26. [Roadmap](#roadmap)
-27. [Contacts](#contacts)
+4. [Why Illumos OpenIndiana?](#why-illumos-openindiana)
+5. [Architectural Notes and Security Proposals](#architectural-notes-and-security-proposals)
+6. [Algorithms and Data Structures](#algorithms-and-data-structures)
+7. [System Requirements](#system-requirements)
+8. [Configuration File](#configuration-file)
+9. [Quick Start](#quick-start)
+10. [Logging](#logging)
+11. [Testing](#testing)
+12. [CRUD Operations](#crud-operations)
+13. [Indexes](#indexes)
+14. [Transactions](#transactions)
+15. [Clustering and Sharding](#clustering-and-sharding)
+16. [Backpressure](#backpressure)
+17. [Geo-Distributed Migration](#geo-distributed-migration)
+18. [Constraints](#constraints)
+19. [Import-Export](#import-export)
+20. [HTTP API](#http-api)
+21. [Access Control](#access-control)
+22. [Lua Plugins](#lua-plugins)
+23. [Triggers](#triggers)
+24. [Data Compression](#data-compression)
+25. [Graphical User Interface](#graphical-user-interface)
+26. [FAQ](#faq)
+27. [Roadmap](#roadmap)
+28. [Contacts](#contacts)
 
 ## About the Project
 
@@ -120,6 +121,21 @@ All additional software (including the project compilation script `build.sh`) is
 <p align="right">(<a href="#readme-top">Back to top</a>)</p>
 
 ---
+
+## Why Illumos OpenIndiana?
+
+While `futriix` maintains cross-platform compatibility and fully supports Linux, **Illumos (OpenIndiana)** is chosen as the primary target platform. For an in-memory NoSQL DBMS operating within Closed Software Environments (CSE / ЗПС), general-purpose operating systems like Linux often introduce resource jitter and architectural overhead. Illumos provides a mission-critical foundation built on strict determinism and textbook system design.
+
+Key architectural reasons for prioritizing the Illumos kernel include:
+
+* **Predictable Kernel Determinism & Real-Time Scheduling:** Unlike the Linux Completely Fair Scheduler (CFS/EEVDF), which balances throughput and interactivity for general workloads, the Illumos dispatcher guarantees rigid, deterministic CPU resource allocation. This eliminates latency spikes (jitter) which are fatal for wait-free/lock-free in-memory transaction processing.
+* **Scalable Event Ports (`port_create`):** For asynchronous, high-concurrency I/O, `futriix` leverages Illumos Event Ports rather than Linux `epoll`. Architectural advantages of Event Ports include native mitigation of the "thundering herd" problem at the kernel level and superior cache-locality when driving thread pools.
+* **Native Fault Management Architecture (FMA):** Operating an in-memory database poses severe risks of hardware-induced data corruption. Illumos FMA continuously monitors hardware telemetry; if a memory module starts degrading, FMA isolates bad pages on the fly *before* a kernel panic occurs, ensuring continuous DBMS availability.
+* **Flawless WAL Integrity via Native ZFS:** The segmented Write-Ahead Log (WAL) requires absolute storage reliability. In Illumos, ZFS is native and deeply integrated into the OS virtual memory layer. It validates data blocks using cryptographic checksums and self-heals silent data corruption, providing zero-overhead durability guarantees.
+* **Rigid OS-Level Isolation (Zones):** Solaris-heritage Zones are baked into the kernel core, rather than being bolted-on via namespaces and cgroups like Linux containers. This provides pure, mathematically sound logical and physical isolation for distributed nodes running on shared hardware.
+* **CDDL Licensing for Closed Environments:** The Common Development and Distribution License (CDDL) allows the modification and hardening of the core OS to meet specific domestic security standards without triggering strict GPL copyleft requirements. This simplifies building trusted, certified hardware-software complexes.
+
+<p align="right">(<a href="#readme-top">Back to top</a>)</p>
 
 ## Architectural Notes and Security Proposals
 
