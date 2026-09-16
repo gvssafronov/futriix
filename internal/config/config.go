@@ -73,12 +73,12 @@ type Config struct {
 type ClusterConfig struct {
 	// Имя кластера - идентификатор для группировки узлов
 	Name string `toml:"name"`
-	
+
 	// Сетевые настройки узла
 	NodeIP   string `toml:"node_ip"`   // IP-адрес для прослушивания
 	NodePort int    `toml:"node_port"` // Порт для клиентских подключений
 	RaftPort int    `toml:"raft_port"` // Порт для Raft-коммуникации
-	
+
 	// Настройки Raft
 	RaftDataDir string   `toml:"raft_data_dir"` // Директория для хранения Raft-лога
 	Bootstrap   bool     `toml:"bootstrap"`     // Является ли узел инициализатором кластера
@@ -110,15 +110,15 @@ type ClusterConfig struct {
 // Обеспечивает выполнение длительных транзакций с компенсацией шагов по протоколу SAGA.
 type SagaConfig struct {
 	// Основные настройки
-	Enabled          bool   `toml:"enabled"`            // Включить SAGA оркестратор
-	CoordinatorCount int    `toml:"coordinator_count"`  // Количество координаторов (>= 3 для отказоустойчивости)
-	StateDir         string `toml:"state_dir"`          // Директория для хранения состояний SAGA
+	Enabled          bool   `toml:"enabled"`           // Включить SAGA оркестратор
+	CoordinatorCount int    `toml:"coordinator_count"` // Количество координаторов (>= 3 для отказоустойчивости)
+	StateDir         string `toml:"state_dir"`         // Директория для хранения состояний SAGA
 
 	// Настройки выполнения
-	MaxRetries           int `toml:"max_retries"`              // Максимальное количество попыток выполнения шага
-	RetryBackoffMs       int `toml:"retry_backoff_ms"`         // Базовая задержка между повторными попытками (мс)
-	SagaTimeoutSec       int `toml:"saga_timeout_sec"`         // Таймаут выполнения SAGA (сек)
-	StuckCheckIntervalSec int `toml:"stuck_check_interval_sec"` // Интервал проверки зависших SAGA (сек)
+	MaxRetries            int `toml:"max_retries"`               // Максимальное количество попыток выполнения шага
+	RetryBackoffMs        int `toml:"retry_backoff_ms"`          // Базовая задержка между повторными попытками (мс)
+	SagaTimeoutSec        int `toml:"saga_timeout_sec"`          // Таймаут выполнения SAGA (сек)
+	StuckCheckIntervalSec int `toml:"stuck_check_interval_sec"`  // Интервал проверки зависших SAGA (сек)
 
 	// Настройки оркестрации
 	LeaderElectionIntervalSec int `toml:"leader_election_interval_sec"` // Интервал выбора лидера (сек)
@@ -126,19 +126,19 @@ type SagaConfig struct {
 	MetricsIntervalSec        int `toml:"metrics_interval_sec"`         // Интервал сбора метрик (сек)
 
 	// Настройки очистки и кэширования
-	CleanupPeriodHours     int `toml:"cleanup_period_hours"`      // Период очистки старых SAGA (часы)
-	MaxCacheSize           int `toml:"max_cache_size"`            // Максимальное количество состояний в кэше
-	OperationRetentionDays int `toml:"operation_retention_days"`  // Время жизни выполненных операций (дни)
+	CleanupPeriodHours     int `toml:"cleanup_period_hours"`     // Период очистки старых SAGA (часы)
+	MaxCacheSize           int `toml:"max_cache_size"`           // Максимальное количество состояний в кэше
+	OperationRetentionDays int `toml:"operation_retention_days"` // Время жизни выполненных операций (дни)
 
 	// Настройки производительности
-	ChannelBufferSize        int `toml:"channel_buffer_size"`          // Размер буфера каналов
-	AsyncRecoveryWorkers     int `toml:"async_recovery_workers"`       // Количество воркеров для асинхронного восстановления
-	AsyncRecoveryTimeoutSec  int `toml:"async_recovery_timeout_sec"`   // Таймаут асинхронного восстановления (сек)
+	ChannelBufferSize       int `toml:"channel_buffer_size"`         // Размер буфера каналов
+	AsyncRecoveryWorkers    int `toml:"async_recovery_workers"`      // Количество воркеров для асинхронного восстановления
+	AsyncRecoveryTimeoutSec int `toml:"async_recovery_timeout_sec"`  // Таймаут асинхронного восстановления (сек)
 
 	// Настройки синхронизации с диском
-	FsyncEnabled      bool `toml:"fsync_enabled"`         // Принудительная синхронизация с диском
-	FsyncMaxRetries   int  `toml:"fsync_max_retries"`     // Количество повторных попыток синхронизации
-	FsyncRetryDelayMs int  `toml:"fsync_retry_delay_ms"`  // Задержка между повторными попытками (мс)
+	FsyncEnabled      bool `toml:"fsync_enabled"`        // Принудительная синхронизация с диском
+	FsyncMaxRetries   int  `toml:"fsync_max_retries"`    // Количество повторных попыток синхронизации
+	FsyncRetryDelayMs int  `toml:"fsync_retry_delay_ms"` // Задержка между повторными попытками (мс)
 }
 
 // =============================================================================
@@ -147,11 +147,11 @@ type SagaConfig struct {
 
 // StorageConfig содержит настройки системы хранения данных.
 type StorageConfig struct {
-	PageSizeMB               int    `toml:"page_size_mb"`                  // Размер страницы памяти в МБ
-	MaxCollections           int    `toml:"max_collections"`               // Максимальное количество коллекций
-	MaxDocumentsPerCollection int    `toml:"max_documents_per_collection"` // Макс. документов в коллекции
-	DefaultEngine            string `toml:"default_engine"`               // Движок по умолчанию
-	EnableCustomEngines      bool   `toml:"enable_custom_engines"`        // Включить пользовательские движки
+	PageSizeMB                int    `toml:"page_size_mb"`                  // Размер страницы памяти в МБ
+	MaxCollections            int    `toml:"max_collections"`               // Максимальное количество коллекций
+	MaxDocumentsPerCollection int    `toml:"max_documents_per_collection"`  // Макс. документов в коллекции
+	DefaultEngine             string `toml:"default_engine"`                // Движок по умолчанию
+	EnableCustomEngines       bool   `toml:"enable_custom_engines"`         // Включить пользовательские движки
 }
 
 // =============================================================================
@@ -190,9 +190,9 @@ type APIConfig struct {
 // ReplicationConfig содержит настройки репликации данных между узлами.
 type ReplicationConfig struct {
 	Enabled              bool `toml:"enabled"`                 // Включена ли репликация
-	SyncReplication      bool `toml:"sync_replication"`       // Синхронная репликация
-	ReplicationTimeoutMs int  `toml:"replication_timeout_ms"` // Таймаут репликации (мс)
-	MaxReplicaLagMs      int  `toml:"max_replica_lag_ms"`     // Максимальное отставание реплики (мс)
+	SyncReplication      bool `toml:"sync_replication"`        // Синхронная репликация
+	ReplicationTimeoutMs int  `toml:"replication_timeout_ms"`  // Таймаут репликации (мс)
+	MaxReplicaLagMs      int  `toml:"max_replica_lag_ms"`      // Максимальное отставание реплики (мс)
 }
 
 // =============================================================================
@@ -201,19 +201,19 @@ type ReplicationConfig struct {
 
 // PluginsConfig содержит настройки системы выполнения Lua-скриптов.
 type PluginsConfig struct {
-	Enabled               bool     `toml:"enabled"`                   // Включена ли поддержка плагинов
-	ScriptDir             string   `toml:"script_dir"`               // Директория со скриптами
-	AllowList             []string `toml:"allow_list"`               // Белый список разрешенных скриптов
-	MaxCPUTimeMs          int      `toml:"max_cpu_time_ms"`          // Макс. время CPU (мс)
-	MaxMemoryMB           int      `toml:"max_memory_mb"`            // Макс. память (МБ)
-	MaxExecutionTimeSec   int      `toml:"max_execution_time_sec"`   // Макс. время выполнения (сек)
-	MaxInstructions       int64    `toml:"max_instructions"`         // Макс. количество инструкций
-	HotReloadIntervalSec  int      `toml:"hot_reload_interval_sec"`  // Интервал горячей перезагрузки
-	MaxEventLogSize       int      `toml:"max_event_log_size"`       // Макс. размер лога событий
-	LoadTimeoutSec        int      `toml:"load_timeout_sec"`         // Таймаут загрузки скрипта
-	MaxLuaStates          int      `toml:"max_lua_states"`           // Макс. количество Lua-состояний
-	LuaStateTTLSec        int      `toml:"lua_state_ttl_sec"`        // TTL Lua-состояния
-	EnginePluginDir       string   `toml:"engine_plugin_dir"`        // Директория плагинов движков
+	Enabled              bool     `toml:"enabled"`                  // Включена ли поддержка плагинов
+	ScriptDir            string   `toml:"script_dir"`               // Директория со скриптами
+	AllowList            []string `toml:"allow_list"`               // Белый список разрешенных скриптов
+	MaxCPUTimeMs         int      `toml:"max_cpu_time_ms"`          // Макс. время CPU (мс)
+	MaxMemoryMB          int      `toml:"max_memory_mb"`            // Макс. память (МБ)
+	MaxExecutionTimeSec  int      `toml:"max_execution_time_sec"`   // Макс. время выполнения (сек)
+	MaxInstructions      int64    `toml:"max_instructions"`         // Макс. количество инструкций
+	HotReloadIntervalSec int      `toml:"hot_reload_interval_sec"`  // Интервал горячей перезагрузки
+	MaxEventLogSize      int      `toml:"max_event_log_size"`       // Макс. размер лога событий
+	LoadTimeoutSec       int      `toml:"load_timeout_sec"`         // Таймаут загрузки скрипта
+	MaxLuaStates         int      `toml:"max_lua_states"`           // Макс. количество Lua-состояний
+	LuaStateTTLSec       int      `toml:"lua_state_ttl_sec"`        // TTL Lua-состояния
+	EnginePluginDir      string   `toml:"engine_plugin_dir"`        // Директория плагинов движков
 }
 
 // =============================================================================
@@ -245,11 +245,11 @@ type WebUIConfig struct {
 
 // PerformanceConfig содержит настройки, влияющие на производительность системы.
 type PerformanceConfig struct {
-	EnablePipeline   bool `toml:"enable_pipeline"`      // Включить конвейерную обработку
-	BatchSize        int  `toml:"batch_size"`           // Размер пакета для пакетных операций
-	ReadFromFollower bool `toml:"read_from_follower"`   // Читать с ведомых узлов
-	MaxConnections   int  `toml:"max_connections"`      // Максимальное количество соединений
-	ReadReplicaDelayMs int `toml:"read_replica_delay_ms"` // Задержка чтения с реплики (мс)
+	EnablePipeline     bool `toml:"enable_pipeline"`        // Включить конвейерную обработку
+	BatchSize          int  `toml:"batch_size"`             // Размер пакета для пакетных операций
+	ReadFromFollower   bool `toml:"read_from_follower"`     // Читать с ведомых узлов
+	MaxConnections     int  `toml:"max_connections"`        // Максимальное количество соединений
+	ReadReplicaDelayMs int  `toml:"read_replica_delay_ms"`  // Задержка чтения с реплики (мс)
 }
 
 // =============================================================================
@@ -258,11 +258,11 @@ type PerformanceConfig struct {
 
 // SecurityConfig содержит настройки безопасности (TLS).
 type SecurityConfig struct {
-	EnableTLS  bool   `toml:"enable_tls"`   // Включен ли TLS
-	CertFile   string `toml:"cert_file"`    // Путь к сертификату
-	KeyFile    string `toml:"key_file"`     // Путь к приватному ключу
-	CAFile     string `toml:"ca_file"`      // Путь к корневому сертификату CA
-	MinVersion string `toml:"min_version"`  // Минимальная версия TLS (1.0, 1.1, 1.2, 1.3)
+	EnableTLS  bool   `toml:"enable_tls"`  // Включен ли TLS
+	CertFile   string `toml:"cert_file"`   // Путь к сертификату
+	KeyFile    string `toml:"key_file"`    // Путь к приватному ключу
+	CAFile     string `toml:"ca_file"`     // Путь к корневому сертификату CA
+	MinVersion string `toml:"min_version"` // Минимальная версия TLS (1.0, 1.1, 1.2, 1.3)
 }
 
 // =============================================================================
@@ -284,9 +284,9 @@ type MonitoringConfig struct {
 // RecoveryConfig содержит настройки восстановления после сбоев.
 type RecoveryConfig struct {
 	AutoRejoin                bool `toml:"auto_rejoin"`                   // Автоматическое переподключение
-	MaxRetrySec               int  `toml:"max_retry_sec"`                // Макс. время повторных попыток
-	DataReplicationTimeoutSec int  `toml:"data_replication_timeout_sec"` // Таймаут репликации данных
-	StaleReadTimeoutSec       int  `toml:"stale_read_timeout_sec"`       // Таймаут устаревшего чтения
+	MaxRetrySec               int  `toml:"max_retry_sec"`                 // Макс. время повторных попыток
+	DataReplicationTimeoutSec int  `toml:"data_replication_timeout_sec"`  // Таймаут репликации данных
+	StaleReadTimeoutSec       int  `toml:"stale_read_timeout_sec"`        // Таймаут устаревшего чтения
 }
 
 // =============================================================================
@@ -296,14 +296,14 @@ type RecoveryConfig struct {
 // WALConfig содержит настройки журнала упреждающей записи.
 // WAL обеспечивает durability и используется для восстановления после сбоев.
 type WALConfig struct {
-	SegmentSizeMB         int  `toml:"segment_size_mb"`          // Размер сегмента WAL (МБ)
-	SyncIntervalSec       int  `toml:"sync_interval_sec"`        // Интервал синхронизации на диск
-	BatchSize             int  `toml:"batch_size"`               // Размер пакета для записи
-	RecoveryWorkers       int  `toml:"recovery_workers"`         // Количество потоков восстановления
-	Enabled               bool `toml:"enabled"`                  // Включен ли WAL
-	AsyncRecovery         bool `toml:"async_recovery"`           // Асинхронное восстановление
-	AsyncRecoveryWorkers  int  `toml:"async_recovery_workers"`   // Потоков асинхронного восстановления
-	AsyncRecoveryBuffer   int  `toml:"async_recovery_buffer"`    // Размер буфера асинхронного восстановления
+	SegmentSizeMB        int  `toml:"segment_size_mb"`         // Размер сегмента WAL (МБ)
+	SyncIntervalSec      int  `toml:"sync_interval_sec"`       // Интервал синхронизации на диск
+	BatchSize            int  `toml:"batch_size"`              // Размер пакета для записи
+	RecoveryWorkers      int  `toml:"recovery_workers"`        // Количество потоков восстановления
+	Enabled              bool `toml:"enabled"`                 // Включен ли WAL
+	AsyncRecovery        bool `toml:"async_recovery"`          // Асинхронное восстановление
+	AsyncRecoveryWorkers int  `toml:"async_recovery_workers"`  // Потоков асинхронного восстановления
+	AsyncRecoveryBuffer  int  `toml:"async_recovery_buffer"`   // Размер буфера асинхронного восстановления
 }
 
 // =============================================================================
@@ -313,12 +313,12 @@ type WALConfig struct {
 // MVCCConfig содержит настройки механизма многоверсионного контроля параллелизма.
 // MVCC позволяет читать согласованные снимки данных без блокировок записи.
 type MVCCConfig struct {
-	MaxVersionsPerDoc   int `toml:"max_versions_per_doc"`   // Макс. версий на документ
-	VisibilityMapSize   int `toml:"visibility_map_size"`    // Размер карты видимости
-	PruneIntervalMin    int `toml:"prune_interval_min"`     // Интервал очистки старых версий (минуты)
-	RetentionDays       int `toml:"retention_days"`         // Срок хранения старых версий (дни)
-	ReadCacheSize       int `toml:"read_cache_size"`        // Размер кэша чтения
-	ReadCacheTTLSec     int `toml:"read_cache_ttl_sec"`     // TTL кэша чтения (секунды)
+	MaxVersionsPerDoc int `toml:"max_versions_per_doc"` // Макс. версий на документ
+	VisibilityMapSize int `toml:"visibility_map_size"`  // Размер карты видимости
+	PruneIntervalMin  int `toml:"prune_interval_min"`   // Интервал очистки старых версий (минуты)
+	RetentionDays     int `toml:"retention_days"`       // Срок хранения старых версий (дни)
+	ReadCacheSize     int `toml:"read_cache_size"`      // Размер кэша чтения
+	ReadCacheTTLSec   int `toml:"read_cache_ttl_sec"`   // TTL кэша чтения (секунды)
 }
 
 // =============================================================================
@@ -340,10 +340,10 @@ type TransactionsConfig struct {
 
 // ACLConfig содержит настройки контроля доступа.
 type ACLConfig struct {
-	MaxDeniedLogSize      int  `toml:"max_denied_log_size"`        // Макс. размер лога отказов
-	TemporaryGrantTTLHours int  `toml:"temporary_grant_ttl_hours"` // TTL временных прав (часы)
-	EnableRoleHierarchy   bool `toml:"enable_role_hierarchy"`      // Иерархия ролей
-	CacheTTLSec           int  `toml:"cache_ttl_sec"`              // TTL кэша ACL (сек)
+	MaxDeniedLogSize       int  `toml:"max_denied_log_size"`        // Макс. размер лога отказов
+	TemporaryGrantTTLHours int  `toml:"temporary_grant_ttl_hours"`  // TTL временных прав (часы)
+	EnableRoleHierarchy    bool `toml:"enable_role_hierarchy"`      // Иерархия ролей
+	CacheTTLSec            int  `toml:"cache_ttl_sec"`              // TTL кэша ACL (сек)
 }
 
 // =============================================================================
@@ -352,14 +352,14 @@ type ACLConfig struct {
 
 // TLSConfig содержит настройки TLS для кластерного взаимодействия.
 type TLSConfig struct {
-	Enabled            bool   `toml:"enabled"`              // Включен ли TLS
-	CertFile           string `toml:"cert_file"`            // Путь к сертификату
-	KeyFile            string `toml:"key_file"`             // Путь к приватному ключу
-	CAFile             string `toml:"ca_file"`              // Путь к корневому сертификату CA
-	MinVersion         string `toml:"min_version"`          // Минимальная версия TLS
-	MutualAuth         bool   `toml:"mutual_auth"`          // Взаимная аутентификация
-	KeyRotationDays    int    `toml:"key_rotation_days"`    // Интервал ротации ключей
-	AutoGenerate       bool   `toml:"auto_generate"`        // Автоматическая генерация сертификатов
+	Enabled         bool   `toml:"enabled"`            // Включен ли TLS
+	CertFile        string `toml:"cert_file"`          // Путь к сертификату
+	KeyFile         string `toml:"key_file"`           // Путь к приватному ключу
+	CAFile          string `toml:"ca_file"`            // Путь к корневому сертификату CA
+	MinVersion      string `toml:"min_version"`        // Минимальная версия TLS
+	MutualAuth      bool   `toml:"mutual_auth"`        // Взаимная аутентификация
+	KeyRotationDays int    `toml:"key_rotation_days"`  // Интервал ротации ключей
+	AutoGenerate    bool   `toml:"auto_generate"`      // Автоматическая генерация сертификатов
 }
 
 // =============================================================================
@@ -369,15 +369,15 @@ type TLSConfig struct {
 // BackpressureConfig содержит настройки механизма обратного давления.
 // Обратное давление защищает систему от перегрузки, ограничивая поступление запросов.
 type BackpressureConfig struct {
-	Enabled              bool    `toml:"enabled"`                // Включен ли механизм
-	CPUThreshold         float64 `toml:"cpu_threshold"`          // Порог CPU (0-1)
-	MemoryThreshold      float64 `toml:"memory_threshold"`       // Порог памяти (0-1)
-	QueueSizeThreshold   int     `toml:"queue_size_threshold"`   // Порог размера очереди
-	ConnectionThreshold  int     `toml:"connection_threshold"`   // Порог количества соединений
-	CheckIntervalMs      int     `toml:"check_interval_ms"`      // Интервал проверки (мс)
-	LowDelayMs           int64   `toml:"low_delay_ms"`           // Задержка для низкой нагрузки (мс)
-	MediumRejectProb     uint32  `toml:"medium_reject_prob"`     // Вероятность отказа при средней нагрузке (%)
-	HighRejectProb       uint32  `toml:"high_reject_prob"`       // Вероятность отказа при высокой нагрузке (%)
+	Enabled             bool    `toml:"enabled"`               // Включен ли механизм
+	CPUThreshold        float64 `toml:"cpu_threshold"`         // Порог CPU (0-1)
+	MemoryThreshold     float64 `toml:"memory_threshold"`      // Порог памяти (0-1)
+	QueueSizeThreshold  int     `toml:"queue_size_threshold"`  // Порог размера очереди
+	ConnectionThreshold int     `toml:"connection_threshold"`  // Порог количества соединений
+	CheckIntervalMs     int     `toml:"check_interval_ms"`     // Интервал проверки (мс)
+	LowDelayMs          int64   `toml:"low_delay_ms"`          // Задержка для низкой нагрузки (мс)
+	MediumRejectProb    uint32  `toml:"medium_reject_prob"`    // Вероятность отказа при средней нагрузке (%)
+	HighRejectProb      uint32  `toml:"high_reject_prob"`      // Вероятность отказа при высокой нагрузке (%)
 }
 
 // =============================================================================
@@ -386,7 +386,7 @@ type BackpressureConfig struct {
 
 // RuntimeLimitsConfig содержит глобальные ограничения для защиты от недобросовестных запросов.
 type RuntimeLimitsConfig struct {
-	Enabled              bool  `toml:"enabled"`                      // Включены ли ограничения
+	Enabled              bool  `toml:"enabled"`                     // Включены ли ограничения
 	GlobalMaxDocSizeMB   int   `toml:"global_max_doc_size_mb"`      // Макс. размер документа (МБ)
 	GlobalMaxCollSizeMB  int64 `toml:"global_max_coll_size_mb"`     // Макс. размер коллекции (МБ)
 	GlobalMaxDocsPerColl int64 `toml:"global_max_docs_per_coll"`    // Макс. документов в коллекции
@@ -399,16 +399,16 @@ type RuntimeLimitsConfig struct {
 // AutoscalingConfig содержит настройки автоматического масштабирования кластера.
 type AutoscalingConfig struct {
 	Enabled               bool    `toml:"enabled"`                  // Включено ли автомасштабирование
-	MinNodes              int     `toml:"min_nodes"`               // Минимальное количество узлов
-	MaxNodes              int     `toml:"max_nodes"`               // Максимальное количество узлов
-	ScaleUpThreshold      float64 `toml:"scale_up_threshold"`      // Порог для увеличения (0-1)
-	ScaleDownThreshold    float64 `toml:"scale_down_threshold"`    // Порог для уменьшения (0-1)
-	ScaleUpCooldownSec    int     `toml:"scale_up_cooldown_sec"`   // Задержка перед масштабированием вверх
-	ScaleDownCooldownSec  int     `toml:"scale_down_cooldown_sec"` // Задержка перед масштабированием вниз
-	EvaluationIntervalSec int     `toml:"evaluation_interval_sec"` // Интервал оценки нагрузки
-	PredictiveEnabled     bool    `toml:"predictive_enabled"`      // Прогнозирующее масштабирование
-	MaxScaleUpNodes       int     `toml:"max_scale_up_nodes"`      // Макс. узлов при масштабировании вверх
-	MaxScaleDownNodes     int     `toml:"max_scale_down_nodes"`    // Макс. узлов при масштабировании вниз
+	MinNodes              int     `toml:"min_nodes"`                // Минимальное количество узлов
+	MaxNodes              int     `toml:"max_nodes"`                // Максимальное количество узлов
+	ScaleUpThreshold      float64 `toml:"scale_up_threshold"`       // Порог для увеличения (0-1)
+	ScaleDownThreshold    float64 `toml:"scale_down_threshold"`     // Порог для уменьшения (0-1)
+	ScaleUpCooldownSec    int     `toml:"scale_up_cooldown_sec"`    // Задержка перед масштабированием вверх
+	ScaleDownCooldownSec  int     `toml:"scale_down_cooldown_sec"`  // Задержка перед масштабированием вниз
+	EvaluationIntervalSec int     `toml:"evaluation_interval_sec"`  // Интервал оценки нагрузки
+	PredictiveEnabled     bool    `toml:"predictive_enabled"`       // Прогнозирующее масштабирование
+	MaxScaleUpNodes       int     `toml:"max_scale_up_nodes"`       // Макс. узлов при масштабировании вверх
+	MaxScaleDownNodes     int     `toml:"max_scale_down_nodes"`     // Макс. узлов при масштабировании вниз
 }
 
 // =============================================================================
@@ -417,10 +417,10 @@ type AutoscalingConfig struct {
 
 // SchemaMigrationConfig содержит настройки миграции схемы данных.
 type SchemaMigrationConfig struct {
-	Enabled        bool   `toml:"enabled"`          // Включена ли миграция
-	MigrationDir   string `toml:"migration_dir"`    // Директория с миграциями
-	AutoMigrate    bool   `toml:"auto_migrate"`     // Автоматическая миграция при старте
-	TargetVersion  string `toml:"target_version"`   // Целевая версия схемы
+	Enabled       bool   `toml:"enabled"`         // Включена ли миграция
+	MigrationDir  string `toml:"migration_dir"`   // Директория с миграциями
+	AutoMigrate   bool   `toml:"auto_migrate"`    // Автоматическая миграция при старте
+	TargetVersion string `toml:"target_version"`  // Целевая версия схемы
 }
 
 // =============================================================================
@@ -429,11 +429,11 @@ type SchemaMigrationConfig struct {
 
 // BackupConfig содержит настройки резервного копирования.
 type BackupConfig struct {
-	Enabled          bool   `toml:"enabled"`            // Включено ли резервное копирование
-	BackupDir        string `toml:"backup_dir"`         // Директория для бэкапов
-	MaxConcurrent    int    `toml:"max_concurrent"`     // Макс. параллельных бэкапов
-	CompressEnabled  bool   `toml:"compress_enabled"`   // Сжатие бэкапов
-	RetentionDays    int    `toml:"retention_days"`     // Срок хранения бэкапов (дни)
+	Enabled         bool   `toml:"enabled"`           // Включено ли резервное копирование
+	BackupDir       string `toml:"backup_dir"`        // Директория для бэкапов
+	MaxConcurrent   int    `toml:"max_concurrent"`    // Макс. параллельных бэкапов
+	CompressEnabled bool   `toml:"compress_enabled"`  // Сжатие бэкапов
+	RetentionDays   int    `toml:"retention_days"`    // Срок хранения бэкапов (дни)
 }
 
 // =============================================================================
@@ -443,19 +443,19 @@ type BackupConfig struct {
 // EnginesConfig содержит настройки всех движков хранения данных.
 // Каждый движок оптимизирован для определённого типа нагрузки.
 type EnginesConfig struct {
-	Row      EngineConfig `toml:"row"`       // Строчный движок (по умолчанию)
-	Columnar EngineConfig `toml:"columnar"`  // Колоночный движок (аналитика)
-	Document EngineConfig `toml:"document"`  // Документоориентированный движок
-	KV       EngineConfig `toml:"kv"`        // Key-Value движок
-	TS       EngineConfig `toml:"ts"`        // Time-Series движок (временные ряды)
-	Graph    EngineConfig `toml:"graph"`     // Графовый движок
+	Row      EngineConfig `toml:"row"`      // Строчный движок (по умолчанию)
+	Columnar EngineConfig `toml:"columnar"` // Колоночный движок (аналитика)
+	Document EngineConfig `toml:"document"` // Документоориентированный движок
+	KV       EngineConfig `toml:"kv"`       // Key-Value движок
+	TS       EngineConfig `toml:"ts"`       // Time-Series движок (временные ряды)
+	Graph    EngineConfig `toml:"graph"`    // Графовый движок
 }
 
 // EngineConfig содержит настройки отдельного движка хранения.
 type EngineConfig struct {
 	Enabled     bool                   `toml:"enabled"`     // Включен ли движок
 	Description string                 `toml:"description"` // Описание движка
-	Config      map[string]interface{} `toml:"config"`     // Дополнительные параметры движка
+	Config      map[string]interface{} `toml:"config"`      // Дополнительные параметры движка
 }
 
 // =============================================================================
@@ -464,13 +464,13 @@ type EngineConfig struct {
 
 // MigrationConfig представляет конфигурацию кросс-датацентровой миграции
 type MigrationConfig struct {
-	Enabled    bool                    `toml:"enabled"`
-	Mode       string                  `toml:"mode"` // manual, semi_auto, auto
-	Source     *DatacenterConfig       `toml:"source"`
-	Target     *DatacenterConfig       `toml:"target"`
-	Settings   *MigrationSettings      `toml:"settings"`
-	Delta      *DeltaSyncConfig        `toml:"delta"`
-	Validation *ValidationConfig       `toml:"validation"`
+	Enabled    bool                `toml:"enabled"`
+	Mode       string              `toml:"mode"` // manual, semi_auto, auto
+	Source     *DatacenterConfig   `toml:"source"`
+	Target     *DatacenterConfig   `toml:"target"`
+	Settings   *MigrationSettings  `toml:"settings"`
+	Delta      *DeltaSyncConfig    `toml:"delta"`
+	Validation *ValidationConfig   `toml:"validation"`
 }
 
 // DatacenterConfig представляет конфигурацию датацентра
@@ -496,9 +496,9 @@ type MigrationSettings struct {
 
 // DeltaSyncConfig представляет конфигурацию дельта-синхронизации
 type DeltaSyncConfig struct {
-	Enabled      bool `toml:"enabled"`
-	IntervalSec  int  `toml:"interval_sec"`
-	MaxLagSec    int  `toml:"max_lag_sec"`
+	Enabled     bool `toml:"enabled"`
+	IntervalSec int  `toml:"interval_sec"`
+	MaxLagSec   int  `toml:"max_lag_sec"`
 }
 
 // ValidationConfig представляет конфигурацию валидации
@@ -514,9 +514,9 @@ type ValidationConfig struct {
 
 // ValidationResult содержит результаты валидации конфигурации.
 type ValidationResult struct {
-	Valid    bool     // Корректна ли конфигурация
-	Errors   []error  // Критические ошибки
-	Warnings []error  // Предупреждения (некритичные)
+	Valid    bool    // Корректна ли конфигурация
+	Errors   []error // Критические ошибки
+	Warnings []error // Предупреждения (некритичные)
 }
 
 // =============================================================================
@@ -1773,6 +1773,15 @@ func LoadConfig(path string) (*Config, error) {
 	if cfg.Cluster.RaftPort == 0 {
 		cfg.Cluster.RaftPort = 9878 // Порт Raft по умолчанию
 	}
+	// ИСПРАВЛЕНИЕ: NodePort ранее не имел значения по умолчанию,
+	// что приводило к ошибке валидации при отсутствии параметра в конфиге.
+	if cfg.Cluster.NodePort == 0 {
+		cfg.Cluster.NodePort = 9877 // Порт клиентских подключений по умолчанию
+	}
+	// ИСПРАВЛЕНИЕ: NodeIP ранее не имел значения по умолчанию.
+	if cfg.Cluster.NodeIP == "" {
+		cfg.Cluster.NodeIP = "0.0.0.0" // Слушать на всех интерфейсах
+	}
 	if cfg.Cluster.RaftDataDir == "" {
 		cfg.Cluster.RaftDataDir = "raft_data" // Директория Raft-лога
 	}
@@ -2195,8 +2204,10 @@ func ValidateConfigFull(cfg *Config) *ValidationResult {
 	}
 
 	// ===== ВАЛИДАЦИЯ КЛАСТЕРНОЙ КОНФИГУРАЦИИ =====
-	if cfg.Cluster.NodePort <= 0 || cfg.Cluster.NodePort > 65535 {
-		result.Errors = append(result.Errors, fmt.Errorf("invalid node_port: %d (must be 1-65535)", cfg.Cluster.NodePort))
+	// ИСПРАВЛЕНИЕ: диапазон расширен до 0-65535, поскольку 0 означает
+	// автоматический выбор порта (после defaults порт уже не 0).
+	if cfg.Cluster.NodePort < 0 || cfg.Cluster.NodePort > 65535 {
+		result.Errors = append(result.Errors, fmt.Errorf("invalid node_port: %d (must be 0-65535, 0 = auto)", cfg.Cluster.NodePort))
 	}
 	if cfg.Cluster.RaftPort <= 0 || cfg.Cluster.RaftPort > 65535 {
 		result.Errors = append(result.Errors, fmt.Errorf("invalid raft_port: %d (must be 1-65535)", cfg.Cluster.RaftPort))
