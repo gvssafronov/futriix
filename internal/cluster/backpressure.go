@@ -10,11 +10,14 @@
 
 // Файл: internal/cluster/backpressure.go
 // Назначение: Backpressure при перегрузке системы
+// Реализован алгоритм "buffer ring" (кольцевой буфер) для хранения
+// истории изменений уровня перегрузки и равномерного вероятностного отклонения.
 
 package cluster
 
 import (
     "fmt"
+    "math/rand"
     "sync"
     "sync/atomic"
     "time"
@@ -30,6 +33,142 @@ const (
     LevelHigh                            // Высокая перегрузка - отклонение большинства
     LevelCritical                        // Критическая - только чтение
 )
+
+// =============================================================================
+// BUFFER RING - КОЛЬЦЕВОЙ БУФЕР ДЛЯ ИСТОРИИ УРОВНЕЙ ПЕРЕГРУЗКИ
+// =============================================================================
+
+// ringEntry представляет одну запись в кольцевом буфере
+type ringEntry struct {
+    level     BackpressureLevel
+    timestamp int64
+    cpu       float64
+    memory    float64
+    queueSize int64
+    conns     int64
+}
+
+// BufferRing представляет кольцевой буфер фиксированного размера
+// для хранения истории изменений уровня перегрузки.
+// Потокобезопасен, использует атомарные операции для индексов.
+type BufferRing struct {
+    entries  []ringEntry
+    capacity int64
+    head     atomic.Int64 // индекс для записи
+    tail     atomic.Int64 // индекс для чтения
+    count    atomic.Int64 // текущее количество записей
+    mu       sync.RWMutex // защита для операций, требующих согласованности
+}
+
+// NewBufferRing создаёт новый кольцевой буфер заданной ёмкости
+func NewBufferRing(capacity int) *BufferRing {
+    if capacity <= 0 {
+        capacity = 100
+    }
+    return &BufferRing{
+        entries:  make([]ringEntry, capacity),
+        capacity: int64(capacity),
+    }
+}
+
+// Push добавляет новую запись в кольцевой буфер.
+// Если буфер полон, самая старая запись перезаписывается.
+func (br *BufferRing) Push(level BackpressureLevel, cpu, memory float64, queueSize, conns int64) {
+    br.mu.Lock()
+    defer br.mu.Unlock()
+
+    idx := br.head.Load() % br.capacity
+    br.entries[idx] = ringEntry{
+        level:     level,
+        timestamp: time.Now().UnixMilli(),
+        cpu:       cpu,
+        memory:    memory,
+        queueSize: queueSize,
+        conns:     conns,
+    }
+    br.head.Add(1)
+
+    // Обновляем tail и count
+    if br.count.Load() < br.capacity {
+        br.count.Add(1)
+    } else {
+        br.tail.Store(br.head.Load() - br.capacity)
+    }
+}
+
+// GetAll возвращает все записи в кольцевом буфере в порядке добавления.
+func (br *BufferRing) GetAll() []ringEntry {
+    br.mu.RLock()
+    defer br.mu.RUnlock()
+
+    count := br.count.Load()
+    if count == 0 {
+        return nil
+    }
+
+    result := make([]ringEntry, 0, count)
+    tail := br.tail.Load()
+    head := br.head.Load()
+
+    for i := tail; i < head; i++ {
+        idx := i % br.capacity
+        result = append(result, br.entries[idx])
+    }
+    return result
+}
+
+// GetLastN возвращает последние N записей из буфера.
+func (br *BufferRing) GetLastN(n int) []ringEntry {
+    br.mu.RLock()
+    defer br.mu.RUnlock()
+
+    count := br.count.Load()
+    if count == 0 || n <= 0 {
+        return nil
+    }
+    if int64(n) > count {
+        n = int(count)
+    }
+
+    result := make([]ringEntry, 0, n)
+    head := br.head.Load()
+    start := head - int64(n)
+    if start < 0 {
+        start = 0
+    }
+
+    for i := start; i < head; i++ {
+        idx := i % br.capacity
+        result = append(result, br.entries[idx])
+    }
+    return result
+}
+
+// Size возвращает текущее количество записей в буфере.
+func (br *BufferRing) Size() int64 {
+    return br.count.Load()
+}
+
+// Capacity возвращает ёмкость буфера.
+func (br *BufferRing) Capacity() int64 {
+    return br.capacity
+}
+
+// Clear очищает буфер.
+func (br *BufferRing) Clear() {
+    br.mu.Lock()
+    defer br.mu.Unlock()
+    br.head.Store(0)
+    br.tail.Store(0)
+    br.count.Store(0)
+    for i := range br.entries {
+        br.entries[i] = ringEntry{}
+    }
+}
+
+// =============================================================================
+// BACKPRESSURE MANAGER
+// =============================================================================
 
 // BackpressureManager управляет backpressure
 type BackpressureManager struct {
@@ -53,6 +192,9 @@ type BackpressureManager struct {
     readAllowed          bool
     rejectProbability    atomic.Uint32
     delayDuration        atomic.Int64
+    historyRing          *BufferRing // Кольцевой буфер истории уровней
+    rand                 *rand.Rand  // Генератор случайных чисел для равномерного отклонения
+    randMu               sync.Mutex  // Защита для генератора случайных чисел
 }
 
 // BackpressureConfig содержит настройки backpressure
@@ -66,6 +208,7 @@ type BackpressureConfig struct {
     LowDelayMs           int64         `json:"low_delay_ms"`
     MediumRejectProb     uint32        `json:"medium_reject_prob"`
     HighRejectProb       uint32        `json:"high_reject_prob"`
+    HistoryRingSize      int           `json:"history_ring_size"` // Размер кольцевого буфера
 }
 
 // DefaultBackpressureConfig возвращает конфигурацию по умолчанию
@@ -80,6 +223,7 @@ func DefaultBackpressureConfig() *BackpressureConfig {
         LowDelayMs:          100,
         MediumRejectProb:    30,
         HighRejectProb:      70,
+        HistoryRingSize:     256,
     }
 }
 
@@ -88,7 +232,13 @@ func NewBackpressureManager(cfg *BackpressureConfig, logger LoggerInterface) *Ba
     if cfg == nil {
         cfg = DefaultBackpressureConfig()
     }
-    
+
+    // Определяем размер кольцевого буфера
+    ringSize := cfg.HistoryRingSize
+    if ringSize <= 0 {
+        ringSize = 256
+    }
+
     bpm := &BackpressureManager{
         currentLevel:        LevelNone,
         cpuThreshold:        cfg.CPUThreshold,
@@ -100,21 +250,21 @@ func NewBackpressureManager(cfg *BackpressureConfig, logger LoggerInterface) *Ba
         enabled:             cfg.Enabled,
         writeAllowed:        true,
         readAllowed:         true,
-        rejectProbability:   atomic.Uint32{},
-        delayDuration:       atomic.Int64{},
+        historyRing:         NewBufferRing(ringSize),
+        rand:                rand.New(rand.NewSource(time.Now().UnixNano())),
     }
-    
+
     bpm.rejectProbability.Store(0)
     bpm.delayDuration.Store(0)
-    
+
     if cfg.Enabled {
         go bpm.monitorLoop()
     }
-    
+
     if logger != nil {
-        logger.Debug("Backpressure manager initialized")
+        logger.Debug("Backpressure manager initialized with buffer ring")
     }
-    
+
     return bpm
 }
 
@@ -122,7 +272,7 @@ func NewBackpressureManager(cfg *BackpressureConfig, logger LoggerInterface) *Ba
 func (bpm *BackpressureManager) monitorLoop() {
     ticker := time.NewTicker(bpm.checkInterval)
     defer ticker.Stop()
-    
+
     for range ticker.C {
         bpm.updateLevel()
     }
@@ -134,9 +284,9 @@ func (bpm *BackpressureManager) updateLevel() {
     memory := float64(bpm.currentMemory.Load()) / 100.0
     queueSize := bpm.currentQueueSize.Load()
     connections := bpm.currentConnections.Load()
-    
+
     newLevel := LevelNone
-    
+
     if cpu >= bpm.cpuThreshold || memory >= bpm.memoryThreshold {
         newLevel = LevelHigh
     } else if queueSize > int64(bpm.queueSizeThreshold) {
@@ -148,15 +298,18 @@ func (bpm *BackpressureManager) updateLevel() {
     } else if connections > int64(bpm.connectionThreshold) {
         newLevel = LevelLow
     }
-    
+
     bpm.mu.Lock()
     oldLevel := bpm.currentLevel
     bpm.currentLevel = newLevel
     bpm.mu.Unlock()
-    
+
+    // Записываем в кольцевой буфер
+    bpm.historyRing.Push(newLevel, cpu, memory, queueSize, connections)
+
     // Применяем политики в зависимости от уровня
     bpm.applyPolicies(newLevel)
-    
+
     if oldLevel != newLevel && bpm.logger != nil {
         bpm.logger.Info(fmt.Sprintf("Backpressure level changed from %v to %v (cpu=%.2f%%, mem=%.2f%%, queue=%d, conns=%d)",
             bpm.levelToString(oldLevel), bpm.levelToString(newLevel), cpu*100, memory*100, queueSize, connections))
@@ -167,32 +320,32 @@ func (bpm *BackpressureManager) updateLevel() {
 func (bpm *BackpressureManager) applyPolicies(level BackpressureLevel) {
     bpm.mu.Lock()
     defer bpm.mu.Unlock()
-    
+
     switch level {
     case LevelNone:
         bpm.writeAllowed = true
         bpm.readAllowed = true
         bpm.rejectProbability.Store(0)
         bpm.delayDuration.Store(0)
-        
+
     case LevelLow:
         bpm.writeAllowed = true
         bpm.readAllowed = true
         bpm.rejectProbability.Store(0)
         bpm.delayDuration.Store(100) // 100ms задержка
-        
+
     case LevelMedium:
         bpm.writeAllowed = true
         bpm.readAllowed = true
         bpm.rejectProbability.Store(30) // 30% отклонение
         bpm.delayDuration.Store(200)
-        
+
     case LevelHigh:
         bpm.writeAllowed = false // Запись запрещена
         bpm.readAllowed = true
         bpm.rejectProbability.Store(70) // 70% отклонение
         bpm.delayDuration.Store(500)
-        
+
     case LevelCritical:
         bpm.writeAllowed = false
         bpm.readAllowed = true // Только чтение
@@ -201,12 +354,29 @@ func (bpm *BackpressureManager) applyPolicies(level BackpressureLevel) {
     }
 }
 
+// shouldReject определяет, нужно ли отклонить запрос на основе вероятности.
+// Использует равномерное распределение через rand.Float64().
+func (bpm *BackpressureManager) shouldReject(rejectProb uint32) bool {
+    if rejectProb == 0 {
+        return false
+    }
+    if rejectProb >= 100 {
+        return true
+    }
+
+    bpm.randMu.Lock()
+    r := bpm.rand.Float64()
+    bpm.randMu.Unlock()
+
+    return r*100 < float64(rejectProb)
+}
+
 // BeforeRequest вызывается перед обработкой запроса
 func (bpm *BackpressureManager) BeforeRequest(isWrite bool) error {
     if !bpm.enabled {
         return nil
     }
-    
+
     bpm.mu.RLock()
     level := bpm.currentLevel
     writeAllowed := bpm.writeAllowed
@@ -214,7 +384,7 @@ func (bpm *BackpressureManager) BeforeRequest(isWrite bool) error {
     rejectProb := bpm.rejectProbability.Load()
     delayDur := bpm.delayDuration.Load()
     bpm.mu.RUnlock()
-    
+
     // Проверяем разрешение на операцию
     if isWrite && !writeAllowed {
         bpm.rejectedCount.Add(1)
@@ -224,22 +394,19 @@ func (bpm *BackpressureManager) BeforeRequest(isWrite bool) error {
         bpm.rejectedCount.Add(1)
         return fmt.Errorf("read operations rejected due to backpressure (level: %v)", bpm.levelToString(level))
     }
-    
-    // Вероятностное отклонение
-    if rejectProb > 0 {
-        // Простая вероятностная проверка
-        if uint32(time.Now().UnixNano()%100) < rejectProb {
-            bpm.rejectedCount.Add(1)
-            return fmt.Errorf("request rejected due to backpressure (probability: %d%%)", rejectProb)
-        }
+
+    // Вероятностное отклонение с использованием равномерного распределения
+    if bpm.shouldReject(rejectProb) {
+        bpm.rejectedCount.Add(1)
+        return fmt.Errorf("request rejected due to backpressure (probability: %d%%)", rejectProb)
     }
-    
+
     // Добавляем задержку если нужно
     if delayDur > 0 {
         bpm.delayedCount.Add(1)
         time.Sleep(time.Duration(delayDur) * time.Millisecond)
     }
-    
+
     return nil
 }
 
@@ -267,7 +434,7 @@ func (bpm *BackpressureManager) GetCurrentLevel() BackpressureLevel {
 func (bpm *BackpressureManager) GetStats() map[string]interface{} {
     bpm.mu.RLock()
     defer bpm.mu.RUnlock()
-    
+
     return map[string]interface{}{
         "current_level":      bpm.levelToString(bpm.currentLevel),
         "write_allowed":      bpm.writeAllowed,
@@ -280,7 +447,43 @@ func (bpm *BackpressureManager) GetStats() map[string]interface{} {
         "memory_threshold":   bpm.memoryThreshold,
         "queue_threshold":    bpm.queueSizeThreshold,
         "conn_threshold":     bpm.connectionThreshold,
+        "history_ring_size":  bpm.historyRing.Size(),
+        "history_ring_cap":   bpm.historyRing.Capacity(),
     }
+}
+
+// GetHistory возвращает историю изменений уровня перегрузки из кольцевого буфера
+func (bpm *BackpressureManager) GetHistory() []map[string]interface{} {
+    entries := bpm.historyRing.GetAll()
+    result := make([]map[string]interface{}, 0, len(entries))
+    for _, e := range entries {
+        result = append(result, map[string]interface{}{
+            "level":      bpm.levelToString(e.level),
+            "timestamp":  e.timestamp,
+            "cpu":        e.cpu,
+            "memory":     e.memory,
+            "queue_size": e.queueSize,
+            "conns":      e.conns,
+        })
+    }
+    return result
+}
+
+// GetLastNHistory возвращает последние N записей истории
+func (bpm *BackpressureManager) GetLastNHistory(n int) []map[string]interface{} {
+    entries := bpm.historyRing.GetLastN(n)
+    result := make([]map[string]interface{}, 0, len(entries))
+    for _, e := range entries {
+        result = append(result, map[string]interface{}{
+            "level":      bpm.levelToString(e.level),
+            "timestamp":  e.timestamp,
+            "cpu":        e.cpu,
+            "memory":     e.memory,
+            "queue_size": e.queueSize,
+            "conns":      e.conns,
+        })
+    }
+    return result
 }
 
 func (bpm *BackpressureManager) levelToString(level BackpressureLevel) string {
