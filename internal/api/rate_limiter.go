@@ -8,7 +8,7 @@
  * https://opensource.org/licenses/CDDL-1.0
  */
 
-// Файл: internal/api/rate_limiter.go (НОВЫЙ ФАЙЛ)
+// Файл: internal/api/rate_limiter.go
 // Назначение: Rate limiting для API
 
 package api
