@@ -22,11 +22,47 @@ package config
 
 import (
 	"fmt"
+	"net"
+	"os"
 	"strings"
 	"time"
 
 	"github.com/BurntSushi/toml"
 )
+
+// =============================================================================
+// КОНСТАНТЫ ДЛЯ ВАЛИДАЦИИ
+// =============================================================================
+
+const (
+	// Максимальный размер файла конфигурации (1 MB)
+	maxConfigFileSize = 1 * 1024 * 1024
+	// Минимальная длина API-ключа
+	minAPIKeyLength = 8
+)
+
+// allowedLogLevels — допустимые уровни логирования
+var allowedLogLevels = map[string]bool{
+	"debug": true,
+	"info":  true,
+	"warn":  true,
+	"error": true,
+	"fatal": true,
+}
+
+// allowedMigrationModes — допустимые режимы миграции
+var allowedMigrationModes = map[string]bool{
+	"manual":    true,
+	"semi_auto": true,
+	"auto":      true,
+}
+
+// allowedCompressionAlgorithms — допустимые алгоритмы сжатия
+var allowedCompressionAlgorithms = map[string]bool{
+	"snappy": true,
+	"lz4":    true,
+	"zstd":   true,
+}
 
 // =============================================================================
 // ОСНОВНАЯ СТРУКТУРА КОНФИГУРАЦИИ
@@ -44,7 +80,6 @@ type Config struct {
 	Replication     ReplicationConfig     `toml:"replication"`      // Настройки репликации
 	Plugins         PluginsConfig         `toml:"plugins"`          // Настройки системы плагинов (Lua)
 	Compression     CompressionConfig     `toml:"compression"`      // Настройки сжатия данных
-	WebUI           WebUIConfig           `toml:"webui"`            // Настройки веб-интерфейса
 	Performance     PerformanceConfig     `toml:"performance"`      // Настройки производительности
 	Security        SecurityConfig        `toml:"security"`         // Настройки безопасности (TLS)
 	Monitoring      MonitoringConfig      `toml:"monitoring"`       // Настройки мониторинга (метрики, трассировка)
@@ -115,10 +150,10 @@ type SagaConfig struct {
 	StateDir         string `toml:"state_dir"`         // Директория для хранения состояний SAGA
 
 	// Настройки выполнения
-	MaxRetries            int `toml:"max_retries"`               // Максимальное количество попыток выполнения шага
-	RetryBackoffMs        int `toml:"retry_backoff_ms"`          // Базовая задержка между повторными попытками (мс)
-	SagaTimeoutSec        int `toml:"saga_timeout_sec"`          // Таймаут выполнения SAGA (сек)
-	StuckCheckIntervalSec int `toml:"stuck_check_interval_sec"`  // Интервал проверки зависших SAGA (сек)
+	MaxRetries            int `toml:"max_retries"`              // Максимальное количество попыток выполнения шага
+	RetryBackoffMs        int `toml:"retry_backoff_ms"`         // Базовая задержка между повторными попытками (мс)
+	SagaTimeoutSec        int `toml:"saga_timeout_sec"`         // Таймаут выполнения SAGA (сек)
+	StuckCheckIntervalSec int `toml:"stuck_check_interval_sec"` // Интервал проверки зависших SAGA (сек)
 
 	// Настройки оркестрации
 	LeaderElectionIntervalSec int `toml:"leader_election_interval_sec"` // Интервал выбора лидера (сек)
@@ -131,9 +166,9 @@ type SagaConfig struct {
 	OperationRetentionDays int `toml:"operation_retention_days"` // Время жизни выполненных операций (дни)
 
 	// Настройки производительности
-	ChannelBufferSize       int `toml:"channel_buffer_size"`         // Размер буфера каналов
-	AsyncRecoveryWorkers    int `toml:"async_recovery_workers"`      // Количество воркеров для асинхронного восстановления
-	AsyncRecoveryTimeoutSec int `toml:"async_recovery_timeout_sec"`  // Таймаут асинхронного восстановления (сек)
+	ChannelBufferSize       int `toml:"channel_buffer_size"`        // Размер буфера каналов
+	AsyncRecoveryWorkers    int `toml:"async_recovery_workers"`     // Количество воркеров для асинхронного восстановления
+	AsyncRecoveryTimeoutSec int `toml:"async_recovery_timeout_sec"` // Таймаут асинхронного восстановления (сек)
 
 	// Настройки синхронизации с диском
 	FsyncEnabled      bool `toml:"fsync_enabled"`        // Принудительная синхронизация с диском
@@ -147,11 +182,11 @@ type SagaConfig struct {
 
 // StorageConfig содержит настройки системы хранения данных.
 type StorageConfig struct {
-	PageSizeMB                int    `toml:"page_size_mb"`                  // Размер страницы памяти в МБ
-	MaxCollections            int    `toml:"max_collections"`               // Максимальное количество коллекций
-	MaxDocumentsPerCollection int    `toml:"max_documents_per_collection"`  // Макс. документов в коллекции
-	DefaultEngine             string `toml:"default_engine"`                // Движок по умолчанию
-	EnableCustomEngines       bool   `toml:"enable_custom_engines"`         // Включить пользовательские движки
+	PageSizeMB                int    `toml:"page_size_mb"`                 // Размер страницы памяти в МБ
+	MaxCollections            int    `toml:"max_collections"`              // Максимальное количество коллекций
+	MaxDocumentsPerCollection int    `toml:"max_documents_per_collection"` // Макс. документов в коллекции
+	DefaultEngine             string `toml:"default_engine"`               // Движок по умолчанию
+	EnableCustomEngines       bool   `toml:"enable_custom_engines"`        // Включить пользовательские движки
 }
 
 // =============================================================================
@@ -189,10 +224,10 @@ type APIConfig struct {
 
 // ReplicationConfig содержит настройки репликации данных между узлами.
 type ReplicationConfig struct {
-	Enabled              bool `toml:"enabled"`                 // Включена ли репликация
-	SyncReplication      bool `toml:"sync_replication"`        // Синхронная репликация
-	ReplicationTimeoutMs int  `toml:"replication_timeout_ms"`  // Таймаут репликации (мс)
-	MaxReplicaLagMs      int  `toml:"max_replica_lag_ms"`      // Максимальное отставание реплики (мс)
+	Enabled              bool `toml:"enabled"`                // Включена ли репликация
+	SyncReplication      bool `toml:"sync_replication"`       // Синхронная репликация
+	ReplicationTimeoutMs int  `toml:"replication_timeout_ms"` // Таймаут репликации (мс)
+	MaxReplicaLagMs      int  `toml:"max_replica_lag_ms"`     // Максимальное отставание реплики (мс)
 }
 
 // =============================================================================
@@ -201,19 +236,19 @@ type ReplicationConfig struct {
 
 // PluginsConfig содержит настройки системы выполнения Lua-скриптов.
 type PluginsConfig struct {
-	Enabled              bool     `toml:"enabled"`                  // Включена ли поддержка плагинов
-	ScriptDir            string   `toml:"script_dir"`               // Директория со скриптами
-	AllowList            []string `toml:"allow_list"`               // Белый список разрешенных скриптов
-	MaxCPUTimeMs         int      `toml:"max_cpu_time_ms"`          // Макс. время CPU (мс)
-	MaxMemoryMB          int      `toml:"max_memory_mb"`            // Макс. память (МБ)
-	MaxExecutionTimeSec  int      `toml:"max_execution_time_sec"`   // Макс. время выполнения (сек)
-	MaxInstructions      int64    `toml:"max_instructions"`         // Макс. количество инструкций
-	HotReloadIntervalSec int      `toml:"hot_reload_interval_sec"`  // Интервал горячей перезагрузки
-	MaxEventLogSize      int      `toml:"max_event_log_size"`       // Макс. размер лога событий
-	LoadTimeoutSec       int      `toml:"load_timeout_sec"`         // Таймаут загрузки скрипта
-	MaxLuaStates         int      `toml:"max_lua_states"`           // Макс. количество Lua-состояний
-	LuaStateTTLSec       int      `toml:"lua_state_ttl_sec"`        // TTL Lua-состояния
-	EnginePluginDir      string   `toml:"engine_plugin_dir"`        // Директория плагинов движков
+	Enabled              bool     `toml:"enabled"`                 // Включена ли поддержка плагинов
+	ScriptDir            string   `toml:"script_dir"`              // Директория со скриптами
+	AllowList            []string `toml:"allow_list"`              // Белый список разрешенных скриптов
+	MaxCPUTimeMs         int      `toml:"max_cpu_time_ms"`         // Макс. время CPU (мс)
+	MaxMemoryMB          int      `toml:"max_memory_mb"`           // Макс. память (МБ)
+	MaxExecutionTimeSec  int      `toml:"max_execution_time_sec"`  // Макс. время выполнения (сек)
+	MaxInstructions      int64    `toml:"max_instructions"`        // Макс. количество инструкций
+	HotReloadIntervalSec int      `toml:"hot_reload_interval_sec"` // Интервал горячей перезагрузки
+	MaxEventLogSize      int      `toml:"max_event_log_size"`      // Макс. размер лога событий
+	LoadTimeoutSec       int      `toml:"load_timeout_sec"`        // Таймаут загрузки скрипта
+	MaxLuaStates         int      `toml:"max_lua_states"`          // Макс. количество Lua-состояний
+	LuaStateTTLSec       int      `toml:"lua_state_ttl_sec"`       // TTL Lua-состояния
+	EnginePluginDir      string   `toml:"engine_plugin_dir"`       // Директория плагинов движков
 }
 
 // =============================================================================
@@ -229,27 +264,16 @@ type CompressionConfig struct {
 }
 
 // =============================================================================
-// КОНФИГУРАЦИЯ ВЕБ-ИНТЕРФЕЙСА
-// =============================================================================
-
-// WebUIConfig содержит настройки встроенного веб-интерфейса.
-type WebUIConfig struct {
-	Enabled bool   `toml:"enabled"` // Включен ли веб-интерфейс
-	Port    int    `toml:"port"`    // Порт для веб-интерфейса
-	Theme   string `toml:"theme"`   // Тема оформления (dark, light)
-}
-
-// =============================================================================
 // КОНФИГУРАЦИЯ ПРОИЗВОДИТЕЛЬНОСТИ
 // =============================================================================
 
 // PerformanceConfig содержит настройки, влияющие на производительность системы.
 type PerformanceConfig struct {
-	EnablePipeline     bool `toml:"enable_pipeline"`        // Включить конвейерную обработку
-	BatchSize          int  `toml:"batch_size"`             // Размер пакета для пакетных операций
-	ReadFromFollower   bool `toml:"read_from_follower"`     // Читать с ведомых узлов
-	MaxConnections     int  `toml:"max_connections"`        // Максимальное количество соединений
-	ReadReplicaDelayMs int  `toml:"read_replica_delay_ms"`  // Задержка чтения с реплики (мс)
+	EnablePipeline     bool `toml:"enable_pipeline"`       // Включить конвейерную обработку
+	BatchSize          int  `toml:"batch_size"`            // Размер пакета для пакетных операций
+	ReadFromFollower   bool `toml:"read_from_follower"`    // Читать с ведомых узлов
+	MaxConnections     int  `toml:"max_connections"`       // Максимальное количество соединений
+	ReadReplicaDelayMs int  `toml:"read_replica_delay_ms"` // Задержка чтения с реплики (мс)
 }
 
 // =============================================================================
@@ -283,10 +307,10 @@ type MonitoringConfig struct {
 
 // RecoveryConfig содержит настройки восстановления после сбоев.
 type RecoveryConfig struct {
-	AutoRejoin                bool `toml:"auto_rejoin"`                   // Автоматическое переподключение
-	MaxRetrySec               int  `toml:"max_retry_sec"`                 // Макс. время повторных попыток
-	DataReplicationTimeoutSec int  `toml:"data_replication_timeout_sec"`  // Таймаут репликации данных
-	StaleReadTimeoutSec       int  `toml:"stale_read_timeout_sec"`        // Таймаут устаревшего чтения
+	AutoRejoin                bool `toml:"auto_rejoin"`                  // Автоматическое переподключение
+	MaxRetrySec               int  `toml:"max_retry_sec"`                // Макс. время повторных попыток
+	DataReplicationTimeoutSec int  `toml:"data_replication_timeout_sec"` // Таймаут репликации данных
+	StaleReadTimeoutSec       int  `toml:"stale_read_timeout_sec"`       // Таймаут устаревшего чтения
 }
 
 // =============================================================================
@@ -296,14 +320,14 @@ type RecoveryConfig struct {
 // WALConfig содержит настройки журнала упреждающей записи.
 // WAL обеспечивает durability и используется для восстановления после сбоев.
 type WALConfig struct {
-	SegmentSizeMB        int  `toml:"segment_size_mb"`         // Размер сегмента WAL (МБ)
-	SyncIntervalSec      int  `toml:"sync_interval_sec"`       // Интервал синхронизации на диск
-	BatchSize            int  `toml:"batch_size"`              // Размер пакета для записи
-	RecoveryWorkers      int  `toml:"recovery_workers"`        // Количество потоков восстановления
-	Enabled              bool `toml:"enabled"`                 // Включен ли WAL
-	AsyncRecovery        bool `toml:"async_recovery"`          // Асинхронное восстановление
-	AsyncRecoveryWorkers int  `toml:"async_recovery_workers"`  // Потоков асинхронного восстановления
-	AsyncRecoveryBuffer  int  `toml:"async_recovery_buffer"`   // Размер буфера асинхронного восстановления
+	SegmentSizeMB        int  `toml:"segment_size_mb"`        // Размер сегмента WAL (МБ)
+	SyncIntervalSec      int  `toml:"sync_interval_sec"`      // Интервал синхронизации на диск
+	BatchSize            int  `toml:"batch_size"`             // Размер пакета для записи
+	RecoveryWorkers      int  `toml:"recovery_workers"`       // Количество потоков восстановления
+	Enabled              bool `toml:"enabled"`                // Включен ли WAL
+	AsyncRecovery        bool `toml:"async_recovery"`         // Асинхронное восстановление
+	AsyncRecoveryWorkers int  `toml:"async_recovery_workers"` // Потоков асинхронного восстановления
+	AsyncRecoveryBuffer  int  `toml:"async_recovery_buffer"`  // Размер буфера асинхронного восстановления
 }
 
 // =============================================================================
@@ -340,10 +364,10 @@ type TransactionsConfig struct {
 
 // ACLConfig содержит настройки контроля доступа.
 type ACLConfig struct {
-	MaxDeniedLogSize       int  `toml:"max_denied_log_size"`        // Макс. размер лога отказов
-	TemporaryGrantTTLHours int  `toml:"temporary_grant_ttl_hours"`  // TTL временных прав (часы)
-	EnableRoleHierarchy    bool `toml:"enable_role_hierarchy"`      // Иерархия ролей
-	CacheTTLSec            int  `toml:"cache_ttl_sec"`              // TTL кэша ACL (сек)
+	MaxDeniedLogSize       int  `toml:"max_denied_log_size"`       // Макс. размер лога отказов
+	TemporaryGrantTTLHours int  `toml:"temporary_grant_ttl_hours"` // TTL временных прав (часы)
+	EnableRoleHierarchy    bool `toml:"enable_role_hierarchy"`     // Иерархия ролей
+	CacheTTLSec            int  `toml:"cache_ttl_sec"`             // TTL кэша ACL (сек)
 }
 
 // =============================================================================
@@ -352,14 +376,14 @@ type ACLConfig struct {
 
 // TLSConfig содержит настройки TLS для кластерного взаимодействия.
 type TLSConfig struct {
-	Enabled         bool   `toml:"enabled"`            // Включен ли TLS
-	CertFile        string `toml:"cert_file"`          // Путь к сертификату
-	KeyFile         string `toml:"key_file"`           // Путь к приватному ключу
-	CAFile          string `toml:"ca_file"`            // Путь к корневому сертификату CA
-	MinVersion      string `toml:"min_version"`        // Минимальная версия TLS
-	MutualAuth      bool   `toml:"mutual_auth"`        // Взаимная аутентификация
-	KeyRotationDays int    `toml:"key_rotation_days"`  // Интервал ротации ключей
-	AutoGenerate    bool   `toml:"auto_generate"`      // Автоматическая генерация сертификатов
+	Enabled         bool   `toml:"enabled"`           // Включен ли TLS
+	CertFile        string `toml:"cert_file"`         // Путь к сертификату
+	KeyFile         string `toml:"key_file"`          // Путь к приватному ключу
+	CAFile          string `toml:"ca_file"`           // Путь к корневому сертификату CA
+	MinVersion      string `toml:"min_version"`       // Минимальная версия TLS
+	MutualAuth      bool   `toml:"mutual_auth"`       // Взаимная аутентификация
+	KeyRotationDays int    `toml:"key_rotation_days"` // Интервал ротации ключей
+	AutoGenerate    bool   `toml:"auto_generate"`     // Автоматическая генерация сертификатов
 }
 
 // =============================================================================
@@ -369,15 +393,15 @@ type TLSConfig struct {
 // BackpressureConfig содержит настройки механизма обратного давления.
 // Обратное давление защищает систему от перегрузки, ограничивая поступление запросов.
 type BackpressureConfig struct {
-	Enabled             bool    `toml:"enabled"`               // Включен ли механизм
-	CPUThreshold        float64 `toml:"cpu_threshold"`         // Порог CPU (0-1)
-	MemoryThreshold     float64 `toml:"memory_threshold"`      // Порог памяти (0-1)
-	QueueSizeThreshold  int     `toml:"queue_size_threshold"`  // Порог размера очереди
-	ConnectionThreshold int     `toml:"connection_threshold"`  // Порог количества соединений
-	CheckIntervalMs     int     `toml:"check_interval_ms"`     // Интервал проверки (мс)
-	LowDelayMs          int64   `toml:"low_delay_ms"`          // Задержка для низкой нагрузки (мс)
-	MediumRejectProb    uint32  `toml:"medium_reject_prob"`    // Вероятность отказа при средней нагрузке (%)
-	HighRejectProb      uint32  `toml:"high_reject_prob"`      // Вероятность отказа при высокой нагрузке (%)
+	Enabled             bool    `toml:"enabled"`              // Включен ли механизм
+	CPUThreshold        float64 `toml:"cpu_threshold"`        // Порог CPU (0-1)
+	MemoryThreshold     float64 `toml:"memory_threshold"`     // Порог памяти (0-1)
+	QueueSizeThreshold  int     `toml:"queue_size_threshold"` // Порог размера очереди
+	ConnectionThreshold int     `toml:"connection_threshold"` // Порог количества соединений
+	CheckIntervalMs     int     `toml:"check_interval_ms"`    // Интервал проверки (мс)
+	LowDelayMs          int64   `toml:"low_delay_ms"`         // Задержка для низкой нагрузки (мс)
+	MediumRejectProb    uint32  `toml:"medium_reject_prob"`   // Вероятность отказа при средней нагрузке (%)
+	HighRejectProb      uint32  `toml:"high_reject_prob"`     // Вероятность отказа при высокой нагрузке (%)
 }
 
 // =============================================================================
@@ -386,10 +410,10 @@ type BackpressureConfig struct {
 
 // RuntimeLimitsConfig содержит глобальные ограничения для защиты от недобросовестных запросов.
 type RuntimeLimitsConfig struct {
-	Enabled              bool  `toml:"enabled"`                     // Включены ли ограничения
-	GlobalMaxDocSizeMB   int   `toml:"global_max_doc_size_mb"`      // Макс. размер документа (МБ)
-	GlobalMaxCollSizeMB  int64 `toml:"global_max_coll_size_mb"`     // Макс. размер коллекции (МБ)
-	GlobalMaxDocsPerColl int64 `toml:"global_max_docs_per_coll"`    // Макс. документов в коллекции
+	Enabled              bool  `toml:"enabled"`                  // Включены ли ограничения
+	GlobalMaxDocSizeMB   int   `toml:"global_max_doc_size_mb"`   // Макс. размер документа (МБ)
+	GlobalMaxCollSizeMB  int64 `toml:"global_max_coll_size_mb"`  // Макс. размер коллекции (МБ)
+	GlobalMaxDocsPerColl int64 `toml:"global_max_docs_per_coll"` // Макс. документов в коллекции
 }
 
 // =============================================================================
@@ -398,17 +422,17 @@ type RuntimeLimitsConfig struct {
 
 // AutoscalingConfig содержит настройки автоматического масштабирования кластера.
 type AutoscalingConfig struct {
-	Enabled               bool    `toml:"enabled"`                  // Включено ли автомасштабирование
-	MinNodes              int     `toml:"min_nodes"`                // Минимальное количество узлов
-	MaxNodes              int     `toml:"max_nodes"`                // Максимальное количество узлов
-	ScaleUpThreshold      float64 `toml:"scale_up_threshold"`       // Порог для увеличения (0-1)
-	ScaleDownThreshold    float64 `toml:"scale_down_threshold"`     // Порог для уменьшения (0-1)
-	ScaleUpCooldownSec    int     `toml:"scale_up_cooldown_sec"`    // Задержка перед масштабированием вверх
-	ScaleDownCooldownSec  int     `toml:"scale_down_cooldown_sec"`  // Задержка перед масштабированием вниз
-	EvaluationIntervalSec int     `toml:"evaluation_interval_sec"`  // Интервал оценки нагрузки
-	PredictiveEnabled     bool    `toml:"predictive_enabled"`       // Прогнозирующее масштабирование
-	MaxScaleUpNodes       int     `toml:"max_scale_up_nodes"`       // Макс. узлов при масштабировании вверх
-	MaxScaleDownNodes     int     `toml:"max_scale_down_nodes"`     // Макс. узлов при масштабировании вниз
+	Enabled               bool    `toml:"enabled"`                 // Включено ли автомасштабирование
+	MinNodes              int     `toml:"min_nodes"`               // Минимальное количество узлов
+	MaxNodes              int     `toml:"max_nodes"`               // Максимальное количество узлов
+	ScaleUpThreshold      float64 `toml:"scale_up_threshold"`      // Порог для увеличения (0-1)
+	ScaleDownThreshold    float64 `toml:"scale_down_threshold"`    // Порог для уменьшения (0-1)
+	ScaleUpCooldownSec    int     `toml:"scale_up_cooldown_sec"`   // Задержка перед масштабированием вверх
+	ScaleDownCooldownSec  int     `toml:"scale_down_cooldown_sec"` // Задержка перед масштабированием вниз
+	EvaluationIntervalSec int     `toml:"evaluation_interval_sec"` // Интервал оценки нагрузки
+	PredictiveEnabled     bool    `toml:"predictive_enabled"`      // Прогнозирующее масштабирование
+	MaxScaleUpNodes       int     `toml:"max_scale_up_nodes"`      // Макс. узлов при масштабировании вверх
+	MaxScaleDownNodes     int     `toml:"max_scale_down_nodes"`    // Макс. узлов при масштабировании вниз
 }
 
 // =============================================================================
@@ -417,10 +441,10 @@ type AutoscalingConfig struct {
 
 // SchemaMigrationConfig содержит настройки миграции схемы данных.
 type SchemaMigrationConfig struct {
-	Enabled       bool   `toml:"enabled"`         // Включена ли миграция
-	MigrationDir  string `toml:"migration_dir"`   // Директория с миграциями
-	AutoMigrate   bool   `toml:"auto_migrate"`    // Автоматическая миграция при старте
-	TargetVersion string `toml:"target_version"`  // Целевая версия схемы
+	Enabled       bool   `toml:"enabled"`        // Включена ли миграция
+	MigrationDir  string `toml:"migration_dir"`  // Директория с миграциями
+	AutoMigrate   bool   `toml:"auto_migrate"`   // Автоматическая миграция при старте
+	TargetVersion string `toml:"target_version"` // Целевая версия схемы
 }
 
 // =============================================================================
@@ -429,11 +453,11 @@ type SchemaMigrationConfig struct {
 
 // BackupConfig содержит настройки резервного копирования.
 type BackupConfig struct {
-	Enabled         bool   `toml:"enabled"`           // Включено ли резервное копирование
-	BackupDir       string `toml:"backup_dir"`        // Директория для бэкапов
-	MaxConcurrent   int    `toml:"max_concurrent"`    // Макс. параллельных бэкапов
-	CompressEnabled bool   `toml:"compress_enabled"`  // Сжатие бэкапов
-	RetentionDays   int    `toml:"retention_days"`    // Срок хранения бэкапов (дни)
+	Enabled         bool   `toml:"enabled"`          // Включено ли резервное копирование
+	BackupDir       string `toml:"backup_dir"`       // Директория для бэкапов
+	MaxConcurrent   int    `toml:"max_concurrent"`   // Макс. параллельных бэкапов
+	CompressEnabled bool   `toml:"compress_enabled"` // Сжатие бэкапов
+	RetentionDays   int    `toml:"retention_days"`   // Срок хранения бэкапов (дни)
 }
 
 // =============================================================================
@@ -464,13 +488,13 @@ type EngineConfig struct {
 
 // MigrationConfig представляет конфигурацию кросс-датацентровой миграции
 type MigrationConfig struct {
-	Enabled    bool                `toml:"enabled"`
-	Mode       string              `toml:"mode"` // manual, semi_auto, auto
-	Source     *DatacenterConfig   `toml:"source"`
-	Target     *DatacenterConfig   `toml:"target"`
-	Settings   *MigrationSettings  `toml:"settings"`
-	Delta      *DeltaSyncConfig    `toml:"delta"`
-	Validation *ValidationConfig   `toml:"validation"`
+	Enabled    bool               `toml:"enabled"`
+	Mode       string             `toml:"mode"` // manual, semi_auto, auto
+	Source     *DatacenterConfig  `toml:"source"`
+	Target     *DatacenterConfig  `toml:"target"`
+	Settings   *MigrationSettings `toml:"settings"`
+	Delta      *DeltaSyncConfig   `toml:"delta"`
+	Validation *ValidationConfig  `toml:"validation"`
 }
 
 // DatacenterConfig представляет конфигурацию датацентра
@@ -691,7 +715,6 @@ func (s *SagaConfig) GetFsyncRetryDelay() time.Duration {
 // =============================================================================
 
 // GetReplicationTimeout возвращает таймаут репликации как time.Duration.
-// Если значение не задано (≤ 0), возвращается значение по умолчанию 5 секунд.
 func (r *ReplicationConfig) GetReplicationTimeout() time.Duration {
 	if r.ReplicationTimeoutMs <= 0 {
 		return 5 * time.Second
@@ -710,7 +733,6 @@ func (r *ReplicationConfig) IsSyncReplicationEnabled() bool {
 }
 
 // GetMaxReplicaLag возвращает максимальное допустимое отставание реплики.
-// Если значение не задано (≤ 0), возвращается 5 секунд.
 func (r *ReplicationConfig) GetMaxReplicaLag() time.Duration {
 	if r.MaxReplicaLagMs <= 0 {
 		return 5 * time.Second
@@ -723,7 +745,6 @@ func (r *ReplicationConfig) GetMaxReplicaLag() time.Duration {
 // =============================================================================
 
 // GetHeartbeatTimeout возвращает таймаут heartbeat-сообщений.
-// По умолчанию 1 секунда.
 func (c *ClusterConfig) GetHeartbeatTimeout() time.Duration {
 	if c.HeartbeatTimeoutMs <= 0 {
 		return 1000 * time.Millisecond
@@ -732,7 +753,6 @@ func (c *ClusterConfig) GetHeartbeatTimeout() time.Duration {
 }
 
 // GetElectionTimeout возвращает таймаут для начала выборов лидера.
-// По умолчанию 1 секунда.
 func (c *ClusterConfig) GetElectionTimeout() time.Duration {
 	if c.ElectionTimeoutMs <= 0 {
 		return 1000 * time.Millisecond
@@ -741,7 +761,6 @@ func (c *ClusterConfig) GetElectionTimeout() time.Duration {
 }
 
 // GetCommitTimeout возвращает таймаут коммита записей.
-// По умолчанию 500 миллисекунд.
 func (c *ClusterConfig) GetCommitTimeout() time.Duration {
 	if c.CommitTimeoutMs <= 0 {
 		return 500 * time.Millisecond
@@ -750,7 +769,6 @@ func (c *ClusterConfig) GetCommitTimeout() time.Duration {
 }
 
 // GetSnapshotInterval возвращает интервал создания снэпшотов.
-// По умолчанию 30 минут.
 func (c *ClusterConfig) GetSnapshotInterval() time.Duration {
 	if c.SnapshotIntervalMin <= 0 {
 		return 30 * time.Minute
@@ -759,7 +777,6 @@ func (c *ClusterConfig) GetSnapshotInterval() time.Duration {
 }
 
 // GetSnapshotThreshold возвращает порог количества записей для создания снэпшота.
-// По умолчанию 1000 записей.
 func (c *ClusterConfig) GetSnapshotThreshold() uint64 {
 	if c.SnapshotThreshold <= 0 {
 		return 1000
@@ -773,7 +790,6 @@ func (c *ClusterConfig) IsSplitBrainPreventionEnabled() bool {
 }
 
 // GetRecoveryTimeout возвращает таймаут восстановления после сбоя.
-// По умолчанию 30 секунд.
 func (c *ClusterConfig) GetRecoveryTimeout() time.Duration {
 	if c.RecoveryTimeoutSec <= 0 {
 		return 30 * time.Second
@@ -782,7 +798,6 @@ func (c *ClusterConfig) GetRecoveryTimeout() time.Duration {
 }
 
 // GetRegion возвращает регион узла.
-// Если не указан, возвращает "default".
 func (c *ClusterConfig) GetRegion() string {
 	if c.Region == "" {
 		return "default"
@@ -791,7 +806,6 @@ func (c *ClusterConfig) GetRegion() string {
 }
 
 // GetPriorityZone возвращает приоритетную зону узла.
-// Значение нормализуется в диапазон [0, 9].
 func (c *ClusterConfig) GetPriorityZone() int {
 	if c.PriorityZone < 0 {
 		return 0
@@ -807,7 +821,6 @@ func (c *ClusterConfig) GetPriorityZone() int {
 // =============================================================================
 
 // GetMaxCPUTime возвращает максимальное время CPU для выполнения скрипта.
-// По умолчанию 100 миллисекунд.
 func (p *PluginsConfig) GetMaxCPUTime() time.Duration {
 	if p.MaxCPUTimeMs <= 0 {
 		return 100 * time.Millisecond
@@ -816,7 +829,6 @@ func (p *PluginsConfig) GetMaxCPUTime() time.Duration {
 }
 
 // GetMaxMemory возвращает максимальный объем памяти для скрипта в байтах.
-// По умолчанию 50 МБ.
 func (p *PluginsConfig) GetMaxMemory() int64 {
 	if p.MaxMemoryMB <= 0 {
 		return 50 * 1024 * 1024
@@ -825,7 +837,6 @@ func (p *PluginsConfig) GetMaxMemory() int64 {
 }
 
 // GetMaxExecutionTime возвращает максимальное время выполнения скрипта.
-// По умолчанию 5 секунд.
 func (p *PluginsConfig) GetMaxExecutionTime() time.Duration {
 	if p.MaxExecutionTimeSec <= 0 {
 		return 5 * time.Second
@@ -834,7 +845,6 @@ func (p *PluginsConfig) GetMaxExecutionTime() time.Duration {
 }
 
 // GetMaxInstructions возвращает максимальное количество инструкций для скрипта.
-// По умолчанию 1 000 000.
 func (p *PluginsConfig) GetMaxInstructions() int64 {
 	if p.MaxInstructions <= 0 {
 		return 1000000
@@ -843,7 +853,6 @@ func (p *PluginsConfig) GetMaxInstructions() int64 {
 }
 
 // GetHotReloadInterval возвращает интервал горячей перезагрузки скриптов.
-// По умолчанию 30 секунд.
 func (p *PluginsConfig) GetHotReloadInterval() time.Duration {
 	if p.HotReloadIntervalSec <= 0 {
 		return 30 * time.Second
@@ -852,7 +861,6 @@ func (p *PluginsConfig) GetHotReloadInterval() time.Duration {
 }
 
 // GetMaxEventLogSize возвращает максимальный размер лога событий.
-// По умолчанию 1000 записей.
 func (p *PluginsConfig) GetMaxEventLogSize() int {
 	if p.MaxEventLogSize <= 0 {
 		return 1000
@@ -861,7 +869,6 @@ func (p *PluginsConfig) GetMaxEventLogSize() int {
 }
 
 // GetLoadTimeout возвращает таймаут загрузки скрипта.
-// По умолчанию 10 секунд.
 func (p *PluginsConfig) GetLoadTimeout() time.Duration {
 	if p.LoadTimeoutSec <= 0 {
 		return 10 * time.Second
@@ -870,7 +877,6 @@ func (p *PluginsConfig) GetLoadTimeout() time.Duration {
 }
 
 // GetMaxLuaStates возвращает максимальное количество Lua-состояний.
-// По умолчанию 100.
 func (p *PluginsConfig) GetMaxLuaStates() int {
 	if p.MaxLuaStates <= 0 {
 		return 100
@@ -879,7 +885,6 @@ func (p *PluginsConfig) GetMaxLuaStates() int {
 }
 
 // GetLuaStateTTL возвращает время жизни Lua-состояния.
-// По умолчанию 10 минут.
 func (p *PluginsConfig) GetLuaStateTTL() time.Duration {
 	if p.LuaStateTTLSec <= 0 {
 		return 10 * time.Minute
@@ -888,7 +893,6 @@ func (p *PluginsConfig) GetLuaStateTTL() time.Duration {
 }
 
 // GetEnginePluginDir возвращает директорию с плагинами движков.
-// По умолчанию "engines".
 func (p *PluginsConfig) GetEnginePluginDir() string {
 	if p.EnginePluginDir == "" {
 		return "engines"
@@ -901,7 +905,6 @@ func (p *PluginsConfig) GetEnginePluginDir() string {
 // =============================================================================
 
 // GetSegmentSize возвращает размер сегмента WAL в байтах.
-// По умолчанию 64 МБ.
 func (w *WALConfig) GetSegmentSize() int64 {
 	if w.SegmentSizeMB <= 0 {
 		return 64 * 1024 * 1024
@@ -910,7 +913,6 @@ func (w *WALConfig) GetSegmentSize() int64 {
 }
 
 // GetSyncInterval возвращает интервал синхронизации WAL с диском.
-// По умолчанию 5 секунд.
 func (w *WALConfig) GetSyncInterval() time.Duration {
 	if w.SyncIntervalSec <= 0 {
 		return 5 * time.Second
@@ -919,7 +921,6 @@ func (w *WALConfig) GetSyncInterval() time.Duration {
 }
 
 // GetBatchSize возвращает размер пакета для записи в WAL.
-// По умолчанию 100 записей.
 func (w *WALConfig) GetBatchSize() int {
 	if w.BatchSize <= 0 {
 		return 100
@@ -928,7 +929,6 @@ func (w *WALConfig) GetBatchSize() int {
 }
 
 // GetRecoveryWorkers возвращает количество потоков для восстановления из WAL.
-// По умолчанию 4 потока.
 func (w *WALConfig) GetRecoveryWorkers() int {
 	if w.RecoveryWorkers <= 0 {
 		return 4
@@ -947,7 +947,6 @@ func (w *WALConfig) IsAsyncRecoveryEnabled() bool {
 }
 
 // GetAsyncRecoveryWorkers возвращает количество потоков асинхронного восстановления.
-// По умолчанию 4 потока.
 func (w *WALConfig) GetAsyncRecoveryWorkers() int {
 	if w.AsyncRecoveryWorkers <= 0 {
 		return 4
@@ -956,7 +955,6 @@ func (w *WALConfig) GetAsyncRecoveryWorkers() int {
 }
 
 // GetAsyncRecoveryBuffer возвращает размер буфера асинхронного восстановления.
-// По умолчанию 10 000 записей.
 func (w *WALConfig) GetAsyncRecoveryBuffer() int {
 	if w.AsyncRecoveryBuffer <= 0 {
 		return 10000
@@ -969,7 +967,6 @@ func (w *WALConfig) GetAsyncRecoveryBuffer() int {
 // =============================================================================
 
 // GetMaxVersionsPerDoc возвращает максимальное количество версий на документ.
-// По умолчанию 10 версий.
 func (m *MVCCConfig) GetMaxVersionsPerDoc() int {
 	if m.MaxVersionsPerDoc <= 0 {
 		return 10
@@ -978,7 +975,6 @@ func (m *MVCCConfig) GetMaxVersionsPerDoc() int {
 }
 
 // GetVisibilityMapSize возвращает размер карты видимости.
-// По умолчанию 1 048 576 элементов (1 МБ).
 func (m *MVCCConfig) GetVisibilityMapSize() int {
 	if m.VisibilityMapSize <= 0 {
 		return 1024 * 1024
@@ -987,7 +983,6 @@ func (m *MVCCConfig) GetVisibilityMapSize() int {
 }
 
 // GetPruneInterval возвращает интервал очистки старых версий.
-// По умолчанию 5 минут.
 func (m *MVCCConfig) GetPruneInterval() time.Duration {
 	if m.PruneIntervalMin <= 0 {
 		return 5 * time.Minute
@@ -996,7 +991,6 @@ func (m *MVCCConfig) GetPruneInterval() time.Duration {
 }
 
 // GetRetentionDays возвращает срок хранения старых версий в днях.
-// По умолчанию 7 дней.
 func (m *MVCCConfig) GetRetentionDays() int {
 	if m.RetentionDays <= 0 {
 		return 7
@@ -1005,7 +999,6 @@ func (m *MVCCConfig) GetRetentionDays() int {
 }
 
 // GetReadCacheSize возвращает размер кэша чтения.
-// По умолчанию 10 000 записей.
 func (m *MVCCConfig) GetReadCacheSize() int {
 	if m.ReadCacheSize <= 0 {
 		return 10000
@@ -1014,7 +1007,6 @@ func (m *MVCCConfig) GetReadCacheSize() int {
 }
 
 // GetReadCacheTTL возвращает TTL кэша чтения.
-// По умолчанию 300 секунд (5 минут).
 func (m *MVCCConfig) GetReadCacheTTL() time.Duration {
 	if m.ReadCacheTTLSec <= 0 {
 		return 300 * time.Second
@@ -1027,7 +1019,6 @@ func (m *MVCCConfig) GetReadCacheTTL() time.Duration {
 // =============================================================================
 
 // GetDefaultTimeout возвращает таймаут транзакции по умолчанию.
-// По умолчанию 30 секунд.
 func (t *TransactionsConfig) GetDefaultTimeout() time.Duration {
 	if t.DefaultTimeoutSec <= 0 {
 		return 30 * time.Second
@@ -1036,7 +1027,6 @@ func (t *TransactionsConfig) GetDefaultTimeout() time.Duration {
 }
 
 // GetDeadlockCheckInterval возвращает интервал проверки взаимоблокировок.
-// По умолчанию 1 секунда.
 func (t *TransactionsConfig) GetDeadlockCheckInterval() time.Duration {
 	if t.DeadlockCheckIntervalSec <= 0 {
 		return 1 * time.Second
@@ -1045,7 +1035,6 @@ func (t *TransactionsConfig) GetDeadlockCheckInterval() time.Duration {
 }
 
 // GetMaxSavepointsPerTx возвращает максимальное количество точек сохранения.
-// По умолчанию 100.
 func (t *TransactionsConfig) GetMaxSavepointsPerTx() int {
 	if t.MaxSavepointsPerTx <= 0 {
 		return 100
@@ -1059,7 +1048,6 @@ func (t *TransactionsConfig) IsTransactionsEnabled() bool {
 }
 
 // GetCheckpointInterval возвращает интервал контрольных точек в секундах.
-// По умолчанию 300 секунд (5 минут).
 func (t *TransactionsConfig) GetCheckpointInterval() int64 {
 	if t.CheckpointIntervalSec <= 0 {
 		return 300
@@ -1072,7 +1060,6 @@ func (t *TransactionsConfig) GetCheckpointInterval() int64 {
 // =============================================================================
 
 // GetMaxDeniedLogSize возвращает максимальный размер лога отказов в доступе.
-// По умолчанию 10 000 записей.
 func (a *ACLConfig) GetMaxDeniedLogSize() int {
 	if a.MaxDeniedLogSize <= 0 {
 		return 10000
@@ -1081,7 +1068,6 @@ func (a *ACLConfig) GetMaxDeniedLogSize() int {
 }
 
 // GetTemporaryGrantTTL возвращает TTL временных прав доступа.
-// По умолчанию 24 часа.
 func (a *ACLConfig) GetTemporaryGrantTTL() time.Duration {
 	if a.TemporaryGrantTTLHours <= 0 {
 		return 24 * time.Hour
@@ -1095,7 +1081,6 @@ func (a *ACLConfig) IsRoleHierarchyEnabled() bool {
 }
 
 // GetCacheTTL возвращает TTL кэша ACL.
-// По умолчанию 60 секунд.
 func (a *ACLConfig) GetCacheTTL() time.Duration {
 	if a.CacheTTLSec <= 0 {
 		return 60 * time.Second
@@ -1108,7 +1093,6 @@ func (a *ACLConfig) GetCacheTTL() time.Duration {
 // =============================================================================
 
 // GetTLSMinVersion возвращает минимальную версию TLS как строку.
-// По умолчанию "1.2".
 func (t *TLSConfig) GetTLSMinVersion() string {
 	if t.MinVersion == "" {
 		return "1.2"
@@ -1127,7 +1111,6 @@ func (t *TLSConfig) IsMutualAuthEnabled() bool {
 }
 
 // GetKeyRotationDays возвращает интервал ротации ключей в днях.
-// По умолчанию 30 дней.
 func (t *TLSConfig) GetKeyRotationDays() int {
 	if t.KeyRotationDays <= 0 {
 		return 30
@@ -1150,8 +1133,6 @@ func (b *BackpressureConfig) IsBackpressureEnabled() bool {
 }
 
 // GetCPUThreshold возвращает порог загрузки CPU.
-// По умолчанию 0.8 (80%).
-// Значение нормализуется в диапазон [0, 1].
 func (b *BackpressureConfig) GetCPUThreshold() float64 {
 	if b.CPUThreshold <= 0 {
 		return 0.8
@@ -1163,8 +1144,6 @@ func (b *BackpressureConfig) GetCPUThreshold() float64 {
 }
 
 // GetMemoryThreshold возвращает порог использования памяти.
-// По умолчанию 0.85 (85%).
-// Значение нормализуется в диапазон [0, 1].
 func (b *BackpressureConfig) GetMemoryThreshold() float64 {
 	if b.MemoryThreshold <= 0 {
 		return 0.85
@@ -1176,7 +1155,6 @@ func (b *BackpressureConfig) GetMemoryThreshold() float64 {
 }
 
 // GetQueueSizeThreshold возвращает порог размера очереди.
-// По умолчанию 10 000 записей.
 func (b *BackpressureConfig) GetQueueSizeThreshold() int {
 	if b.QueueSizeThreshold <= 0 {
 		return 10000
@@ -1185,7 +1163,6 @@ func (b *BackpressureConfig) GetQueueSizeThreshold() int {
 }
 
 // GetConnectionThreshold возвращает порог количества соединений.
-// По умолчанию 5 000.
 func (b *BackpressureConfig) GetConnectionThreshold() int {
 	if b.ConnectionThreshold <= 0 {
 		return 5000
@@ -1194,7 +1171,6 @@ func (b *BackpressureConfig) GetConnectionThreshold() int {
 }
 
 // GetCheckInterval возвращает интервал проверки нагрузки.
-// По умолчанию 1 секунда.
 func (b *BackpressureConfig) GetCheckInterval() time.Duration {
 	if b.CheckIntervalMs <= 0 {
 		return 1 * time.Second
@@ -1203,7 +1179,6 @@ func (b *BackpressureConfig) GetCheckInterval() time.Duration {
 }
 
 // GetLowDelay возвращает задержку при низкой нагрузке.
-// По умолчанию 100 миллисекунд.
 func (b *BackpressureConfig) GetLowDelay() time.Duration {
 	if b.LowDelayMs <= 0 {
 		return 100 * time.Millisecond
@@ -1212,7 +1187,6 @@ func (b *BackpressureConfig) GetLowDelay() time.Duration {
 }
 
 // GetMediumRejectProb возвращает вероятность отказа при средней нагрузке.
-// Значение нормализуется в диапазон [0, 100].
 func (b *BackpressureConfig) GetMediumRejectProb() uint32 {
 	if b.MediumRejectProb > 100 {
 		return 100
@@ -1221,7 +1195,6 @@ func (b *BackpressureConfig) GetMediumRejectProb() uint32 {
 }
 
 // GetHighRejectProb возвращает вероятность отказа при высокой нагрузке.
-// Значение нормализуется в диапазон [0, 100].
 func (b *BackpressureConfig) GetHighRejectProb() uint32 {
 	if b.HighRejectProb > 100 {
 		return 100
@@ -1239,7 +1212,6 @@ func (r *RuntimeLimitsConfig) IsRuntimeLimitsEnabled() bool {
 }
 
 // GetGlobalMaxDocSizeMB возвращает максимальный размер документа в МБ.
-// По умолчанию 16 МБ.
 func (r *RuntimeLimitsConfig) GetGlobalMaxDocSizeMB() int {
 	if r.GlobalMaxDocSizeMB <= 0 {
 		return 16
@@ -1248,7 +1220,6 @@ func (r *RuntimeLimitsConfig) GetGlobalMaxDocSizeMB() int {
 }
 
 // GetGlobalMaxCollSizeMB возвращает максимальный размер коллекции в МБ.
-// По умолчанию 10240 МБ (10 ГБ).
 func (r *RuntimeLimitsConfig) GetGlobalMaxCollSizeMB() int64 {
 	if r.GlobalMaxCollSizeMB <= 0 {
 		return 10240
@@ -1257,7 +1228,6 @@ func (r *RuntimeLimitsConfig) GetGlobalMaxCollSizeMB() int64 {
 }
 
 // GetGlobalMaxDocsPerColl возвращает максимальное количество документов в коллекции.
-// По умолчанию 10 000 000.
 func (r *RuntimeLimitsConfig) GetGlobalMaxDocsPerColl() int64 {
 	if r.GlobalMaxDocsPerColl <= 0 {
 		return 10000000
@@ -1275,7 +1245,6 @@ func (a *AutoscalingConfig) IsAutoscalingEnabled() bool {
 }
 
 // GetMinNodes возвращает минимальное количество узлов.
-// По умолчанию 1.
 func (a *AutoscalingConfig) GetMinNodes() int {
 	if a.MinNodes <= 0 {
 		return 1
@@ -1284,7 +1253,6 @@ func (a *AutoscalingConfig) GetMinNodes() int {
 }
 
 // GetMaxNodes возвращает максимальное количество узлов.
-// По умолчанию 10.
 func (a *AutoscalingConfig) GetMaxNodes() int {
 	if a.MaxNodes <= 0 {
 		return 10
@@ -1293,8 +1261,6 @@ func (a *AutoscalingConfig) GetMaxNodes() int {
 }
 
 // GetScaleUpThreshold возвращает порог для масштабирования вверх.
-// По умолчанию 0.75 (75%).
-// Значение нормализуется в диапазон [0, 1].
 func (a *AutoscalingConfig) GetScaleUpThreshold() float64 {
 	if a.ScaleUpThreshold <= 0 {
 		return 0.75
@@ -1306,7 +1272,6 @@ func (a *AutoscalingConfig) GetScaleUpThreshold() float64 {
 }
 
 // GetScaleDownThreshold возвращает порог для масштабирования вниз.
-// По умолчанию 0.30 (30%).
 func (a *AutoscalingConfig) GetScaleDownThreshold() float64 {
 	if a.ScaleDownThreshold <= 0 {
 		return 0.30
@@ -1315,7 +1280,6 @@ func (a *AutoscalingConfig) GetScaleDownThreshold() float64 {
 }
 
 // GetScaleUpCooldown возвращает задержку перед масштабированием вверх.
-// По умолчанию 5 минут.
 func (a *AutoscalingConfig) GetScaleUpCooldown() time.Duration {
 	if a.ScaleUpCooldownSec <= 0 {
 		return 5 * time.Minute
@@ -1324,7 +1288,6 @@ func (a *AutoscalingConfig) GetScaleUpCooldown() time.Duration {
 }
 
 // GetScaleDownCooldown возвращает задержку перед масштабированием вниз.
-// По умолчанию 10 минут.
 func (a *AutoscalingConfig) GetScaleDownCooldown() time.Duration {
 	if a.ScaleDownCooldownSec <= 0 {
 		return 10 * time.Minute
@@ -1333,7 +1296,6 @@ func (a *AutoscalingConfig) GetScaleDownCooldown() time.Duration {
 }
 
 // GetEvaluationInterval возвращает интервал оценки нагрузки.
-// По умолчанию 30 секунд.
 func (a *AutoscalingConfig) GetEvaluationInterval() time.Duration {
 	if a.EvaluationIntervalSec <= 0 {
 		return 30 * time.Second
@@ -1347,7 +1309,6 @@ func (a *AutoscalingConfig) IsPredictiveEnabled() bool {
 }
 
 // GetMaxScaleUpNodes возвращает максимальное количество узлов для масштабирования вверх.
-// По умолчанию 3.
 func (a *AutoscalingConfig) GetMaxScaleUpNodes() int {
 	if a.MaxScaleUpNodes <= 0 {
 		return 3
@@ -1356,7 +1317,6 @@ func (a *AutoscalingConfig) GetMaxScaleUpNodes() int {
 }
 
 // GetMaxScaleDownNodes возвращает максимальное количество узлов для масштабирования вниз.
-// По умолчанию 2.
 func (a *AutoscalingConfig) GetMaxScaleDownNodes() int {
 	if a.MaxScaleDownNodes <= 0 {
 		return 2
@@ -1374,7 +1334,6 @@ func (s *SchemaMigrationConfig) IsSchemaMigrationEnabled() bool {
 }
 
 // GetMigrationDir возвращает директорию с миграциями.
-// По умолчанию "migrations".
 func (s *SchemaMigrationConfig) GetMigrationDir() string {
 	if s.MigrationDir == "" {
 		return "migrations"
@@ -1388,7 +1347,6 @@ func (s *SchemaMigrationConfig) IsAutoMigrateEnabled() bool {
 }
 
 // GetTargetVersion возвращает целевую версию схемы.
-// По умолчанию "latest".
 func (s *SchemaMigrationConfig) GetTargetVersion() string {
 	if s.TargetVersion == "" {
 		return "latest"
@@ -1406,7 +1364,6 @@ func (b *BackupConfig) IsBackupEnabled() bool {
 }
 
 // GetBackupDir возвращает директорию для резервных копий.
-// По умолчанию "backups".
 func (b *BackupConfig) GetBackupDir() string {
 	if b.BackupDir == "" {
 		return "backups"
@@ -1415,7 +1372,6 @@ func (b *BackupConfig) GetBackupDir() string {
 }
 
 // GetMaxConcurrentBackups возвращает максимальное количество параллельных бэкапов.
-// По умолчанию 1.
 func (b *BackupConfig) GetMaxConcurrentBackups() int {
 	if b.MaxConcurrent <= 0 {
 		return 1
@@ -1429,7 +1385,6 @@ func (b *BackupConfig) IsCompressEnabled() bool {
 }
 
 // GetBackupRetentionDays возвращает срок хранения резервных копий в днях.
-// По умолчанию 7 дней.
 func (b *BackupConfig) GetBackupRetentionDays() int {
 	if b.RetentionDays <= 0 {
 		return 7
@@ -1442,7 +1397,6 @@ func (b *BackupConfig) GetBackupRetentionDays() int {
 // =============================================================================
 
 // GetDefaultEngine возвращает движок хранения по умолчанию.
-// По умолчанию "row".
 func (s *StorageConfig) GetDefaultEngine() string {
 	if s.DefaultEngine == "" {
 		return "row"
@@ -1460,7 +1414,6 @@ func (s *StorageConfig) IsCustomEnginesEnabled() bool {
 // =============================================================================
 
 // IsEngineEnabled проверяет, включен ли указанный движок хранения.
-// Поддерживаются: row, columnar, document, kv, ts, graph.
 func (e *EnginesConfig) IsEngineEnabled(name string) bool {
 	switch name {
 	case "row":
@@ -1481,7 +1434,6 @@ func (e *EnginesConfig) IsEngineEnabled(name string) bool {
 }
 
 // GetEngineConfig возвращает конфигурацию указанного движка хранения.
-// Возвращает пустую карту, если движок не найден.
 func (e *EnginesConfig) GetEngineConfig(name string) map[string]interface{} {
 	switch name {
 	case "row":
@@ -1502,7 +1454,6 @@ func (e *EnginesConfig) GetEngineConfig(name string) map[string]interface{} {
 }
 
 // GetEngineDescription возвращает описание указанного движка хранения.
-// Возвращает пустую строку, если движок не найден.
 func (e *EnginesConfig) GetEngineDescription(name string) string {
 	switch name {
 	case "row":
@@ -1527,7 +1478,6 @@ func (e *EnginesConfig) GetEngineDescription(name string) string {
 // =============================================================================
 
 // GetMaxRetryDuration возвращает максимальную длительность повторных попыток.
-// По умолчанию 300 секунд (5 минут).
 func (r *RecoveryConfig) GetMaxRetryDuration() time.Duration {
 	if r.MaxRetrySec <= 0 {
 		return 300 * time.Second
@@ -1536,7 +1486,6 @@ func (r *RecoveryConfig) GetMaxRetryDuration() time.Duration {
 }
 
 // GetDataReplicationTimeout возвращает таймаут репликации данных при восстановлении.
-// По умолчанию 60 секунд.
 func (r *RecoveryConfig) GetDataReplicationTimeout() time.Duration {
 	if r.DataReplicationTimeoutSec <= 0 {
 		return 60 * time.Second
@@ -1545,7 +1494,6 @@ func (r *RecoveryConfig) GetDataReplicationTimeout() time.Duration {
 }
 
 // GetStaleReadTimeout возвращает таймаут для чтения устаревших данных.
-// По умолчанию 30 секунд.
 func (r *RecoveryConfig) GetStaleReadTimeout() time.Duration {
 	if r.StaleReadTimeoutSec <= 0 {
 		return 30 * time.Second
@@ -1563,7 +1511,6 @@ func (r *RecoveryConfig) IsAutoRejoinEnabled() bool {
 // =============================================================================
 
 // GetBatchSize возвращает размер пакета для пакетных операций.
-// По умолчанию 100 записей.
 func (p *PerformanceConfig) GetBatchSize() int {
 	if p.BatchSize <= 0 {
 		return 100
@@ -1572,7 +1519,6 @@ func (p *PerformanceConfig) GetBatchSize() int {
 }
 
 // GetMaxConnections возвращает максимальное количество соединений.
-// По умолчанию 1000.
 func (p *PerformanceConfig) GetMaxConnections() int {
 	if p.MaxConnections <= 0 {
 		return 1000
@@ -1591,7 +1537,6 @@ func (p *PerformanceConfig) IsPipelineEnabled() bool {
 }
 
 // GetReadReplicaDelay возвращает задержку чтения с реплики.
-// По умолчанию 100 миллисекунд.
 func (p *PerformanceConfig) GetReadReplicaDelay() time.Duration {
 	if p.ReadReplicaDelayMs <= 0 {
 		return 100 * time.Millisecond
@@ -1604,7 +1549,6 @@ func (p *PerformanceConfig) GetReadReplicaDelay() time.Duration {
 // =============================================================================
 
 // GetMetricsPort возвращает порт для экспорта метрик.
-// По умолчанию 9090.
 func (m *MonitoringConfig) GetMetricsPort() int {
 	if m.MetricsPort <= 0 {
 		return 9090
@@ -1613,7 +1557,6 @@ func (m *MonitoringConfig) GetMetricsPort() int {
 }
 
 // GetTraceSampleRate возвращает частоту сэмплирования трассировки.
-// Нормализуется в диапазон (0, 1].
 func (m *MonitoringConfig) GetTraceSampleRate() float64 {
 	if m.TraceSampleRate <= 0 || m.TraceSampleRate > 1 {
 		return 0.01
@@ -1636,8 +1579,6 @@ func (m *MonitoringConfig) IsTracingEnabled() bool {
 // =============================================================================
 
 // GetTLSMinVersion возвращает минимальную версию TLS как числовой код.
-// Используется для настройки TLS-соединений.
-// Возвращает 0x0303 (TLS 1.2) по умолчанию.
 func (s *SecurityConfig) GetTLSMinVersion() uint16 {
 	switch s.MinVersion {
 	case "1.0":
@@ -1654,7 +1595,6 @@ func (s *SecurityConfig) GetTLSMinVersion() uint16 {
 }
 
 // IsTLSEnabled возвращает флаг включения TLS.
-// TLS считается включенным, если EnableTLS=true и указаны файлы сертификата и ключа.
 func (s *SecurityConfig) IsTLSEnabled() bool {
 	return s.EnableTLS && s.CertFile != "" && s.KeyFile != ""
 }
@@ -1684,7 +1624,6 @@ func (c *CompressionConfig) IsCompressionEnabled() bool {
 }
 
 // GetAlgorithm возвращает алгоритм сжатия.
-// По умолчанию "snappy".
 func (c *CompressionConfig) GetAlgorithm() string {
 	if c.Algorithm == "" {
 		return "snappy"
@@ -1693,7 +1632,6 @@ func (c *CompressionConfig) GetAlgorithm() string {
 }
 
 // GetLevel возвращает уровень сжатия.
-// Нормализуется в диапазон [1, 9].
 func (c *CompressionConfig) GetLevel() int {
 	if c.Level < 1 {
 		return 3
@@ -1705,39 +1643,11 @@ func (c *CompressionConfig) GetLevel() int {
 }
 
 // GetMinSize возвращает минимальный размер данных для сжатия в байтах.
-// По умолчанию 1024 байта.
 func (c *CompressionConfig) GetMinSize() int {
 	if c.MinSize <= 0 {
 		return 1024
 	}
 	return c.MinSize
-}
-
-// =============================================================================
-// ГЕТТЕРЫ ДЛЯ WebUIConfig
-// =============================================================================
-
-// IsWebUIEnabled возвращает флаг включения веб-интерфейса.
-func (w *WebUIConfig) IsWebUIEnabled() bool {
-	return w.Enabled
-}
-
-// GetWebUIPort возвращает порт для веб-интерфейса.
-// По умолчанию 8080.
-func (w *WebUIConfig) GetWebUIPort() int {
-	if w.Port <= 0 {
-		return 8080
-	}
-	return w.Port
-}
-
-// GetTheme возвращает тему веб-интерфейса.
-// По умолчанию "dark".
-func (w *WebUIConfig) GetTheme() string {
-	if w.Theme == "" {
-		return "dark"
-	}
-	return w.Theme
 }
 
 // =============================================================================
@@ -1747,11 +1657,12 @@ func (w *WebUIConfig) GetTheme() string {
 // LoadConfig загружает и валидирует конфигурацию из TOML-файла.
 //
 // Алгоритм работы:
-// 1. Декодирование TOML-файла в структуру Config
-// 2. Применение значений по умолчанию для всех параметров
-// 3. Полная валидация конфигурации
-// 4. Вывод предупреждений (если есть)
-// 5. Возврат заполненной структуры или ошибки
+// 1. Проверка существования, размера и прав доступа к файлу
+// 2. Декодирование TOML-файла в структуру Config
+// 3. Применение значений по умолчанию для всех параметров
+// 4. Полная валидация конфигурации
+// 5. Вывод предупреждений (если есть)
+// 6. Возврат заполненной структуры или ошибки
 //
 // Параметры:
 //   - path: путь к TOML-файлу конфигурации
@@ -1760,51 +1671,65 @@ func (w *WebUIConfig) GetTheme() string {
 //   - *Config: заполненная структура конфигурации
 //   - error: ошибка загрузки или валидации
 func LoadConfig(path string) (*Config, error) {
+	// Проверка существования файла
+	info, err := os.Stat(path)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return nil, fmt.Errorf("config file not found: %s", path)
+		}
+		return nil, fmt.Errorf("failed to stat config file: %w", err)
+	}
+
+	// Проверка, что это обычный файл (не симлинк, не директория)
+	if !info.Mode().IsRegular() {
+		return nil, fmt.Errorf("config path is not a regular file: %s", path)
+	}
+
+	// Проверка размера файла (защита от DoS)
+	if info.Size() > maxConfigFileSize {
+		return nil, fmt.Errorf("config file too large: %d bytes (max %d)", info.Size(), maxConfigFileSize)
+	}
+
 	var cfg Config
 	if _, err := toml.DecodeFile(path, &cfg); err != nil {
 		return nil, fmt.Errorf("failed to decode config file: %v", err)
 	}
 
 	// ===== УСТАНОВКА ЗНАЧЕНИЙ ПО УМОЛЧАНИЮ =====
-	// Все значения по умолчанию гарантируют работоспособность
-	// даже при отсутствии соответствующих секций в конфиге.
 
 	// Кластерные настройки
 	if cfg.Cluster.RaftPort == 0 {
-		cfg.Cluster.RaftPort = 9878 // Порт Raft по умолчанию
+		cfg.Cluster.RaftPort = 9878
 	}
-	// ИСПРАВЛЕНИЕ: NodePort ранее не имел значения по умолчанию,
-	// что приводило к ошибке валидации при отсутствии параметра в конфиге.
 	if cfg.Cluster.NodePort == 0 {
-		cfg.Cluster.NodePort = 9877 // Порт клиентских подключений по умолчанию
+		cfg.Cluster.NodePort = 9877
 	}
-	// ИСПРАВЛЕНИЕ: NodeIP ранее не имел значения по умолчанию.
 	if cfg.Cluster.NodeIP == "" {
-		cfg.Cluster.NodeIP = "0.0.0.0" // Слушать на всех интерфейсах
+		cfg.Cluster.NodeIP = "0.0.0.0"
 	}
 	if cfg.Cluster.RaftDataDir == "" {
-		cfg.Cluster.RaftDataDir = "raft_data" // Директория Raft-лога
+		cfg.Cluster.RaftDataDir = "raft_data"
 	}
 	if cfg.Cluster.HeartbeatTimeoutMs == 0 {
-		cfg.Cluster.HeartbeatTimeoutMs = 1000 // 1 секунда
+		cfg.Cluster.HeartbeatTimeoutMs = 1000
 	}
 	if cfg.Cluster.ElectionTimeoutMs == 0 {
-		cfg.Cluster.ElectionTimeoutMs = 1000 // 1 секунда
+		cfg.Cluster.ElectionTimeoutMs = 1000
 	}
 	if cfg.Cluster.CommitTimeoutMs == 0 {
-		cfg.Cluster.CommitTimeoutMs = 500 // 500 мс
+		cfg.Cluster.CommitTimeoutMs = 500
 	}
 	if cfg.Cluster.SnapshotIntervalMin == 0 {
-		cfg.Cluster.SnapshotIntervalMin = 30 // 30 минут
+		cfg.Cluster.SnapshotIntervalMin = 30
 	}
 	if cfg.Cluster.SnapshotThreshold == 0 {
-		cfg.Cluster.SnapshotThreshold = 1000 // 1000 записей
+		cfg.Cluster.SnapshotThreshold = 1000
 	}
 	if cfg.Cluster.RecoveryTimeoutSec == 0 {
-		cfg.Cluster.RecoveryTimeoutSec = 30 // 30 секунд
+		cfg.Cluster.RecoveryTimeoutSec = 30
 	}
 	if cfg.Cluster.Region == "" {
-		cfg.Cluster.Region = "default" // Регион по умолчанию
+		cfg.Cluster.Region = "default"
 	}
 
 	// Настройки SAGA
@@ -1862,50 +1787,50 @@ func LoadConfig(path string) (*Config, error) {
 
 	// Настройки репликации
 	if cfg.Replication.ReplicationTimeoutMs == 0 {
-		cfg.Replication.ReplicationTimeoutMs = 5000 // 5 секунд
+		cfg.Replication.ReplicationTimeoutMs = 5000
 	}
 	if cfg.Replication.MaxReplicaLagMs == 0 {
-		cfg.Replication.MaxReplicaLagMs = 5000 // 5 секунд
+		cfg.Replication.MaxReplicaLagMs = 5000
 	}
 
 	// Настройки плагинов
 	if cfg.Plugins.ScriptDir == "" {
-		cfg.Plugins.ScriptDir = "plugins" // Директория плагинов
+		cfg.Plugins.ScriptDir = "plugins"
 	}
 	if cfg.Plugins.EnginePluginDir == "" {
-		cfg.Plugins.EnginePluginDir = "engines" // Директория движков
+		cfg.Plugins.EnginePluginDir = "engines"
 	}
 	if cfg.Plugins.MaxCPUTimeMs == 0 {
-		cfg.Plugins.MaxCPUTimeMs = 100 // 100 мс
+		cfg.Plugins.MaxCPUTimeMs = 100
 	}
 	if cfg.Plugins.MaxMemoryMB == 0 {
-		cfg.Plugins.MaxMemoryMB = 50 // 50 МБ
+		cfg.Plugins.MaxMemoryMB = 50
 	}
 	if cfg.Plugins.MaxExecutionTimeSec == 0 {
-		cfg.Plugins.MaxExecutionTimeSec = 5 // 5 секунд
+		cfg.Plugins.MaxExecutionTimeSec = 5
 	}
 	if cfg.Plugins.MaxInstructions == 0 {
-		cfg.Plugins.MaxInstructions = 1000000 // 1 млн инструкций
+		cfg.Plugins.MaxInstructions = 1000000
 	}
 	if cfg.Plugins.HotReloadIntervalSec == 0 {
-		cfg.Plugins.HotReloadIntervalSec = 30 // 30 секунд
+		cfg.Plugins.HotReloadIntervalSec = 30
 	}
 	if cfg.Plugins.MaxEventLogSize == 0 {
-		cfg.Plugins.MaxEventLogSize = 1000 // 1000 записей
+		cfg.Plugins.MaxEventLogSize = 1000
 	}
 	if cfg.Plugins.LoadTimeoutSec == 0 {
-		cfg.Plugins.LoadTimeoutSec = 10 // 10 секунд
+		cfg.Plugins.LoadTimeoutSec = 10
 	}
 	if cfg.Plugins.MaxLuaStates == 0 {
-		cfg.Plugins.MaxLuaStates = 100 // 100 состояний
+		cfg.Plugins.MaxLuaStates = 100
 	}
 	if cfg.Plugins.LuaStateTTLSec == 0 {
-		cfg.Plugins.LuaStateTTLSec = 600 // 10 минут
+		cfg.Plugins.LuaStateTTLSec = 600
 	}
 
 	// Настройки API
 	if cfg.API.Port == 0 {
-		cfg.API.Port = 8080 // Порт API по умолчанию
+		cfg.API.Port = 8080
 	}
 
 	// Настройки сжатия
@@ -1913,18 +1838,10 @@ func LoadConfig(path string) (*Config, error) {
 		cfg.Compression.Algorithm = "snappy"
 	}
 	if cfg.Compression.MinSize == 0 {
-		cfg.Compression.MinSize = 1024 // 1 КБ
+		cfg.Compression.MinSize = 1024
 	}
 	if cfg.Compression.Level == 0 {
-		cfg.Compression.Level = 3 // Уровень сжатия по умолчанию
-	}
-
-	// Настройки веб-интерфейса
-	if cfg.WebUI.Port == 0 {
-		cfg.WebUI.Port = 9080 // Порт WebUI по умолчанию
-	}
-	if cfg.WebUI.Theme == "" {
-		cfg.WebUI.Theme = "dark"
+		cfg.Compression.Level = 3
 	}
 
 	// Настройки производительности
@@ -1935,7 +1852,7 @@ func LoadConfig(path string) (*Config, error) {
 		cfg.Performance.MaxConnections = 1000
 	}
 	if cfg.Performance.ReadReplicaDelayMs == 0 {
-		cfg.Performance.ReadReplicaDelayMs = 100 // 100 мс
+		cfg.Performance.ReadReplicaDelayMs = 100
 	}
 
 	// Настройки мониторинга
@@ -1943,36 +1860,36 @@ func LoadConfig(path string) (*Config, error) {
 		cfg.Monitoring.MetricsPort = 9090
 	}
 	if cfg.Monitoring.TraceSampleRate == 0 {
-		cfg.Monitoring.TraceSampleRate = 0.01 // 1%
+		cfg.Monitoring.TraceSampleRate = 0.01
 	}
 
 	// Настройки восстановления
 	if cfg.Recovery.MaxRetrySec == 0 {
-		cfg.Recovery.MaxRetrySec = 300 // 5 минут
+		cfg.Recovery.MaxRetrySec = 300
 	}
 	if cfg.Recovery.DataReplicationTimeoutSec == 0 {
-		cfg.Recovery.DataReplicationTimeoutSec = 60 // 1 минута
+		cfg.Recovery.DataReplicationTimeoutSec = 60
 	}
 	if cfg.Recovery.StaleReadTimeoutSec == 0 {
-		cfg.Recovery.StaleReadTimeoutSec = 30 // 30 секунд
+		cfg.Recovery.StaleReadTimeoutSec = 30
 	}
 
 	// Настройки безопасности
 	if cfg.Security.MinVersion == "" {
-		cfg.Security.MinVersion = "1.2" // TLS 1.2
+		cfg.Security.MinVersion = "1.2"
 	}
 
 	// Настройки хранилища
 	if cfg.Storage.DefaultEngine == "" {
-		cfg.Storage.DefaultEngine = "row" // Строчный движок по умолчанию
+		cfg.Storage.DefaultEngine = "row"
 	}
 
 	// Настройки WAL
 	if cfg.WAL.SegmentSizeMB == 0 {
-		cfg.WAL.SegmentSizeMB = 64 // 64 МБ
+		cfg.WAL.SegmentSizeMB = 64
 	}
 	if cfg.WAL.SyncIntervalSec == 0 {
-		cfg.WAL.SyncIntervalSec = 5 // 5 секунд
+		cfg.WAL.SyncIntervalSec = 5
 	}
 	if cfg.WAL.BatchSize == 0 {
 		cfg.WAL.BatchSize = 100
@@ -1995,30 +1912,30 @@ func LoadConfig(path string) (*Config, error) {
 		cfg.MVCC.VisibilityMapSize = 1024 * 1024
 	}
 	if cfg.MVCC.PruneIntervalMin == 0 {
-		cfg.MVCC.PruneIntervalMin = 5 // 5 минут
+		cfg.MVCC.PruneIntervalMin = 5
 	}
 	if cfg.MVCC.RetentionDays == 0 {
-		cfg.MVCC.RetentionDays = 7 // 7 дней
+		cfg.MVCC.RetentionDays = 7
 	}
 	if cfg.MVCC.ReadCacheSize == 0 {
 		cfg.MVCC.ReadCacheSize = 10000
 	}
 	if cfg.MVCC.ReadCacheTTLSec == 0 {
-		cfg.MVCC.ReadCacheTTLSec = 300 // 5 минут
+		cfg.MVCC.ReadCacheTTLSec = 300
 	}
 
 	// Настройки транзакций
 	if cfg.Transactions.DefaultTimeoutSec == 0 {
-		cfg.Transactions.DefaultTimeoutSec = 30 // 30 секунд
+		cfg.Transactions.DefaultTimeoutSec = 30
 	}
 	if cfg.Transactions.DeadlockCheckIntervalSec == 0 {
-		cfg.Transactions.DeadlockCheckIntervalSec = 1 // 1 секунда
+		cfg.Transactions.DeadlockCheckIntervalSec = 1
 	}
 	if cfg.Transactions.MaxSavepointsPerTx == 0 {
 		cfg.Transactions.MaxSavepointsPerTx = 100
 	}
 	if cfg.Transactions.CheckpointIntervalSec == 0 {
-		cfg.Transactions.CheckpointIntervalSec = 300 // 5 минут
+		cfg.Transactions.CheckpointIntervalSec = 300
 	}
 
 	// Настройки ACL
@@ -2026,10 +1943,10 @@ func LoadConfig(path string) (*Config, error) {
 		cfg.ACL.MaxDeniedLogSize = 10000
 	}
 	if cfg.ACL.TemporaryGrantTTLHours == 0 {
-		cfg.ACL.TemporaryGrantTTLHours = 24 // 24 часа
+		cfg.ACL.TemporaryGrantTTLHours = 24
 	}
 	if cfg.ACL.CacheTTLSec == 0 {
-		cfg.ACL.CacheTTLSec = 60 // 60 секунд
+		cfg.ACL.CacheTTLSec = 60
 	}
 
 	// Настройки кластерного TLS
@@ -2037,26 +1954,26 @@ func LoadConfig(path string) (*Config, error) {
 		cfg.ClusterTLS.MinVersion = "1.2"
 	}
 	if cfg.ClusterTLS.KeyRotationDays == 0 {
-		cfg.ClusterTLS.KeyRotationDays = 30 // 30 дней
+		cfg.ClusterTLS.KeyRotationDays = 30
 	}
 
 	// Настройки обратного давления
 	if cfg.Backpressure.CheckIntervalMs == 0 {
-		cfg.Backpressure.CheckIntervalMs = 1000 // 1 секунда
+		cfg.Backpressure.CheckIntervalMs = 1000
 	}
 	if cfg.Backpressure.LowDelayMs == 0 {
-		cfg.Backpressure.LowDelayMs = 100 // 100 мс
+		cfg.Backpressure.LowDelayMs = 100
 	}
 
 	// Настройки ограничений времени выполнения
 	if cfg.RuntimeLimits.GlobalMaxDocSizeMB == 0 {
-		cfg.RuntimeLimits.GlobalMaxDocSizeMB = 16 // 16 МБ
+		cfg.RuntimeLimits.GlobalMaxDocSizeMB = 16
 	}
 	if cfg.RuntimeLimits.GlobalMaxCollSizeMB == 0 {
-		cfg.RuntimeLimits.GlobalMaxCollSizeMB = 10240 // 10 ГБ
+		cfg.RuntimeLimits.GlobalMaxCollSizeMB = 10240
 	}
 	if cfg.RuntimeLimits.GlobalMaxDocsPerColl == 0 {
-		cfg.RuntimeLimits.GlobalMaxDocsPerColl = 10000000 // 10 млн
+		cfg.RuntimeLimits.GlobalMaxDocsPerColl = 10000000
 	}
 
 	// Настройки автомасштабирования
@@ -2067,13 +1984,13 @@ func LoadConfig(path string) (*Config, error) {
 		cfg.Autoscaling.MaxNodes = 10
 	}
 	if cfg.Autoscaling.ScaleUpCooldownSec == 0 {
-		cfg.Autoscaling.ScaleUpCooldownSec = 300 // 5 минут
+		cfg.Autoscaling.ScaleUpCooldownSec = 300
 	}
 	if cfg.Autoscaling.ScaleDownCooldownSec == 0 {
-		cfg.Autoscaling.ScaleDownCooldownSec = 600 // 10 минут
+		cfg.Autoscaling.ScaleDownCooldownSec = 600
 	}
 	if cfg.Autoscaling.EvaluationIntervalSec == 0 {
-		cfg.Autoscaling.EvaluationIntervalSec = 30 // 30 секунд
+		cfg.Autoscaling.EvaluationIntervalSec = 30
 	}
 
 	// Настройки миграции схемы
@@ -2086,7 +2003,7 @@ func LoadConfig(path string) (*Config, error) {
 		cfg.Backup.BackupDir = "backups"
 	}
 	if cfg.Backup.RetentionDays == 0 {
-		cfg.Backup.RetentionDays = 7 // 7 дней
+		cfg.Backup.RetentionDays = 7
 	}
 
 	// Настройки кросс-датацентровой миграции
@@ -2134,12 +2051,10 @@ func LoadConfig(path string) (*Config, error) {
 	}
 
 	// ===== ИНИЦИАЛИЗАЦИЯ ДВИЖКОВ =====
-	// Строчный движок включен по умолчанию
 	if !cfg.Engines.Row.Enabled {
 		cfg.Engines.Row.Enabled = true
 		cfg.Engines.Row.Description = "Row-based storage engine (default)"
 	}
-	// Инициализация конфигураций движков
 	if cfg.Engines.Row.Config == nil {
 		cfg.Engines.Row.Config = make(map[string]interface{})
 	}
@@ -2176,7 +2091,6 @@ func LoadConfig(path string) (*Config, error) {
 		return nil, fmt.Errorf("%s", errMsg.String())
 	}
 
-	// Вывод предупреждений (если они есть)
 	if len(validationResult.Warnings) > 0 {
 		fmt.Println("Configuration warnings:")
 		for _, warn := range validationResult.Warnings {
@@ -2185,6 +2099,22 @@ func LoadConfig(path string) (*Config, error) {
 	}
 
 	return &cfg, nil
+}
+
+// ValidateConfig выполняет валидацию конфигурации и возвращает первую ошибку.
+// Удобная обёртка для вызова из main.go.
+func ValidateConfig(cfg *Config) error {
+	if cfg == nil {
+		return fmt.Errorf("config is nil")
+	}
+	result := ValidateConfigFull(cfg)
+	if !result.Valid {
+		if len(result.Errors) > 0 {
+			return result.Errors[0]
+		}
+		return fmt.Errorf("config validation failed")
+	}
+	return nil
 }
 
 // ValidateConfigFull выполняет полную валидацию конфигурации.
@@ -2204,8 +2134,6 @@ func ValidateConfigFull(cfg *Config) *ValidationResult {
 	}
 
 	// ===== ВАЛИДАЦИЯ КЛАСТЕРНОЙ КОНФИГУРАЦИИ =====
-	// ИСПРАВЛЕНИЕ: диапазон расширен до 0-65535, поскольку 0 означает
-	// автоматический выбор порта (после defaults порт уже не 0).
 	if cfg.Cluster.NodePort < 0 || cfg.Cluster.NodePort > 65535 {
 		result.Errors = append(result.Errors, fmt.Errorf("invalid node_port: %d (must be 0-65535, 0 = auto)", cfg.Cluster.NodePort))
 	}
@@ -2214,6 +2142,11 @@ func ValidateConfigFull(cfg *Config) *ValidationResult {
 	}
 	if cfg.Cluster.PriorityZone < 0 || cfg.Cluster.PriorityZone > 9 {
 		result.Errors = append(result.Errors, fmt.Errorf("priority_zone must be between 0 and 9, got %d", cfg.Cluster.PriorityZone))
+	}
+	if cfg.Cluster.NodeIP != "" && cfg.Cluster.NodeIP != "0.0.0.0" && cfg.Cluster.NodeIP != "::" {
+		if net.ParseIP(cfg.Cluster.NodeIP) == nil {
+			result.Errors = append(result.Errors, fmt.Errorf("invalid node_ip: %s (must be a valid IP address)", cfg.Cluster.NodeIP))
+		}
 	}
 
 	// ===== ВАЛИДАЦИЯ SAGA КОНФИГУРАЦИИ =====
@@ -2257,16 +2190,24 @@ func ValidateConfigFull(cfg *Config) *ValidationResult {
 		result.Errors = append(result.Errors, fmt.Errorf("trace_sample_rate must be between 0 and 1, got %f", cfg.Monitoring.TraceSampleRate))
 	}
 
+	// ===== ВАЛИДАЦИЯ LOG =====
+	if cfg.Log.LogLevel != "" {
+		level := strings.ToLower(cfg.Log.LogLevel)
+		if !allowedLogLevels[level] {
+			result.Errors = append(result.Errors, fmt.Errorf("invalid log_level: %s (allowed: debug, info, warn, error, fatal)", cfg.Log.LogLevel))
+		}
+	}
+
 	// ===== ПРОВЕРКА КОНФЛИКТОВ ПОРТОВ =====
 	// Никакие два сервиса не должны использовать один порт
 	if cfg.API.Port == cfg.Cluster.NodePort {
 		result.Errors = append(result.Errors, fmt.Errorf("API port %d conflicts with cluster node port", cfg.API.Port))
 	}
-	if cfg.WebUI.Port == cfg.Cluster.NodePort {
-		result.Errors = append(result.Errors, fmt.Errorf("WebUI port %d conflicts with cluster node port", cfg.WebUI.Port))
-	}
 	if cfg.Monitoring.MetricsPort == cfg.Cluster.NodePort {
 		result.Errors = append(result.Errors, fmt.Errorf("metrics port %d conflicts with cluster node port", cfg.Monitoring.MetricsPort))
+	}
+	if cfg.API.Port == cfg.Monitoring.MetricsPort {
+		result.Warnings = append(result.Warnings, fmt.Errorf("API port %d conflicts with metrics port", cfg.API.Port))
 	}
 
 	// ===== ВАЛИДАЦИЯ TLS =====
@@ -2281,10 +2222,7 @@ func ValidateConfigFull(cfg *Config) *ValidationResult {
 
 	// ===== ВАЛИДАЦИЯ СЖАТИЯ =====
 	if cfg.Compression.Enabled {
-		switch cfg.Compression.Algorithm {
-		case "snappy", "lz4", "zstd":
-			// Поддерживаемые алгоритмы
-		default:
+		if !allowedCompressionAlgorithms[cfg.Compression.Algorithm] {
 			result.Errors = append(result.Errors, fmt.Errorf("unsupported compression algorithm: %s, supported: snappy, lz4, zstd", cfg.Compression.Algorithm))
 		}
 	}
@@ -2389,7 +2327,7 @@ func ValidateConfigFull(cfg *Config) *ValidationResult {
 		if cfg.Migration.Validation == nil {
 			result.Warnings = append(result.Warnings, fmt.Errorf("migration.validation not configured, using defaults"))
 		}
-		if cfg.Migration.Mode != "manual" && cfg.Migration.Mode != "semi_auto" && cfg.Migration.Mode != "auto" {
+		if !allowedMigrationModes[cfg.Migration.Mode] {
 			result.Errors = append(result.Errors, fmt.Errorf("migration.mode must be one of: manual, semi_auto, auto, got %s", cfg.Migration.Mode))
 		}
 		if cfg.Migration.Settings != nil && cfg.Migration.Settings.BatchSize < 1 {
@@ -2407,9 +2345,18 @@ func ValidateConfigFull(cfg *Config) *ValidationResult {
 		if cfg.Migration.Delta != nil && cfg.Migration.Delta.IntervalSec < 1 {
 			result.Errors = append(result.Errors, fmt.Errorf("migration.delta.interval_sec must be at least 1, got %d", cfg.Migration.Delta.IntervalSec))
 		}
+		if cfg.Migration.Source != nil && cfg.Migration.Source.APIKey != "" {
+			if len(cfg.Migration.Source.APIKey) < minAPIKeyLength {
+				result.Warnings = append(result.Warnings, fmt.Errorf("migration.source.api_key is shorter than %d characters", minAPIKeyLength))
+			}
+		}
+		if cfg.Migration.Target != nil && cfg.Migration.Target.APIKey != "" {
+			if len(cfg.Migration.Target.APIKey) < minAPIKeyLength {
+				result.Warnings = append(result.Warnings, fmt.Errorf("migration.target.api_key is shorter than %d characters", minAPIKeyLength))
+			}
+		}
 	}
 
-	// Конфигурация считается корректной, если нет ни одной ошибки
 	result.Valid = len(result.Errors) == 0
 	return result
 }
