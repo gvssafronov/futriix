@@ -33,8 +33,7 @@
 22. [Lua Plugins](#lua-plugins)
 23. [Triggers](#triggers)
 24. [Data Compression](#data-compression)
-25. [Graphical User Interface](#graphical-user-interface)
-26. [FAQ](#faq)
+25. [FAQ](#faq)
 27. [Roadmap](#roadmap)
 28. [Contacts](#contacts)
 
@@ -1823,21 +1822,12 @@ Current Size: 1.6 KB
 
 ---
 
-## Graphical User Interface
-To simplify administration, Futriix includes a **WUI (Web User Interface)**. Using a web browser, users can manage the DBMS quickly, simply, and conveniently. The baseline configuration view is available via the default address.
-
-![wui.png](wui.png)
-
-[To top](#readme-top)
-
----
-
 ## FAQ (Frequently Asked Questions)
 This section answers the most common questions to help you quickly understand the project without spending time finding obvious concepts. If you cannot find the required answer, please file an issue; your feedback helps prioritize development.
 
 **Question:** Why is the version designated as "Futriix 2 i²" instead of just "2.0"?  
 **Answer:** "2" stands for the version number containing core features (sharding, WAL, MVCC, etc.).  
-"i²" is a mathematical metaphor: although $i$ is an imaginary unit, its square yields an absolutely exact, real result ($i^2 = -1$). Similarly, even in a complex distributed environment with parallel operations (wait-free, lock-free), Futriix yields strictly predictable results via Raft, ACID, and MVCC. This aligns with the OpenIndiana/Illumos philosophy: determinism and resource control.
+"i²" is a mathematical metaphor: although $i$ is a imaginary unit, its square yields an absolutely exact, real result ($i^2 = -1$). Similarly, even in a complex distributed environment with parallel operations (wait-free, lock-free), Futriix yields strictly predictable results via Raft, ACID, and MVCC. This aligns with the OpenIndiana/Illumos philosophy: determinism and resource control.
 
 [To top](#readme-top)
 
