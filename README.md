@@ -983,92 +983,170 @@ Recommendation: Cluster is healthy, all systems operational
 
 ## Backpressure
 
-The backpressure engine manages network traffic routing when message processing pipelines experience localized processing queues overflows. If internal memory buffers hit critical saturation markings, traffic processing is automatically throttled or temporarily paused to prevent cascading resource starvation errors.
+**Purpose**
 
-### Mathematical Rejection Probability Adaptive Algorithm Model Formulations:
-$$P_{reject} = f(	ext{level}) 	imes g(	ext{load}) 	imes h(	ext{time})$$
+To protect the futriix DBMS from overload during bursts of incoming load, it implements a **Backpressure** mechanism that uses the **"Buffer Ring"** algorithm.
+It implements adaptive deferral of requests instead of immediately rejecting them: when the system is close to saturation, requests are not dropped but are briefly placed in a ring buffer to give the core time to process already accepted operations.
 
-* $P_{reject}$: Computed output probability determining request dropping paths values ($0.0 \le P_{reject} \le 1.0$).
-* $f(	ext{level})$: Discontinuous scaling step metrics mapping qualitative overload categories boundaries markings values:
-$$f(	ext{level}) = egin{cases} 
-0.00 & 	ext{if level} = 	ext{None} \ 
-0.00 & 	ext{if level} = 	ext{Low (introduces delay factors only)} \ 
-0.30 & 	ext{if level} = 	ext{Medium} \ 
-0.70 & 	ext{if level} = 	ext{High} \ 
-0.90 & 	ext{if level} = 	ext{Critical} 
-\end{cases}$$
-* $g(	ext{load})$: Aggregated resource usage metric calculating core resource metrics consumption tracks:
-$$g(	ext{load}) = rac{	ext{cpu\_usage} + 	ext{memory\_usage} + 	ext{queue\_factor} + 	ext{connection\_factor}}{4}$$
-* $h(	ext{time})$: Exponential smoothing calculation model mitigating thundering herd request spike behaviors:
-$$h(	ext{time}) = 1 - e^{-\lambda 	imes \Delta t}$$
-where constant velocity decay weights match $\lambda = 0.1$, and $\Delta t$ handles duration spans tracking seconds since the last rejection event.
+This approach differs from the classic "reject under overload" in that it smooths peaks rather than cutting them off, and preserves more useful work during short-term bursts.
 
-#### Low Overload Status Delay Formulation:
-$$D = D_{base} 	imes (1 + lpha 	imes 	ext{load\_factor})$$
-Base reference duration standards align with $D_{base} = 100	ext{ms}$, amplification weight adjustments map to $lpha = 2.0$, and the resource utilization mean equals $	ext{load\_factor} = rac{	ext{cpu\_usage} + 	ext{memory\_usage}}{2}$.
+**Idea**
 
-<p align="right">(<a href="#readme-top">Back to top</a>)</p>
+A **Buffer Ring** is a fixed ring of slots for pending requests. Unlike a queue (FIFO), the ring:
 
----
+    * Has a constant size N (does not grow under load);
+    * Reuses slots circularly via the head and tail indices;
+    * Does not expand when full, but applies an eviction policy;
+    * Supports O(1) insertion and removal — no allocations in the hot path.
 
-## Geo-Distributed Migration
+Each slot stores a request "ticket": metadata (type, deadline, priority) and a continuation function resume(), which will be called when its turn comes.
 
-Cross-datacenter transfers use Change Data Capture (CDC) pipelines and non-blocking asynchronous data mirroring without requiring engine downtime windows.
-
-### Migration Lifecycle States:
-```
-[ Idle ] ──&gt; [ Preparing ] ──&gt; [ Migrating ] ──&gt; [ Delta Sync ] ──&gt; [ Validating ] ──&gt; [ Completed ]
+```sh
+        tail (writer)                 head (reader)
+        ↓                             ↓
+   ┌───┬───┬───┬───┬───┬───┬───┬───┐
+   │ 7 │ 8 │ 9 │   │   │ 4 │ 5 │ 6 │
+   └───┴───┴───┴───┴───┴───┴───┴───┘
+     ↑ occupied  ↑ free       ↑ occupied
 ```
 
-### Operational Execution Modes Matrix:
-* `manual`: Operational tasks require manual authorization steps.
-* `semi_auto`: Baseline storage transfers are triggered manually; catch-up delta sync loops execute automatically.
-* `auto`: Transfers trigger automatically based on internal scheduler settings.
+**Algorithm**
 
-### Control Command Reference Sequences:
-* `migration start <source_dc> <target_dc> [db] [collection]`: Launch migration process pipeline.
-* `migration status [task_id]`: Check progress metrics parameters data points.
-* `migration list`: View active and historical migration tasks.
-* `migration pause / resume / cancel <task_id>`: Control target processing tasks.
-* `migration stats`: Review performance characteristics dashboards.
-* `migration validate <task_id>`: Check integrity using SHA-256 controller checksum blocks (defaults test a 10% sampling population block).
+1. Load classification
 
-### Example JSON Specification Configuration Interface Template:
-```toml
-[migration]
-enabled = true
-mode = "semi_auto"
+On each check cycle (for example, once per check_interval_ms), the manager samples metrics: CPU load, memory, queue length, number of connections. Thresholds from the configuration determine the level:
 
-[migration.source]
-name = "dc-primary"
-endpoint = "https://dc1.futriix.local:8080"
-timeout_sec = 30
+| Level | Condition | Action |
+|---------|---------|----------|
+| `Low` | CPU < `cpu_threshold` and queue < `queue_size_threshold` | request passes immediately |
+| `Medium` | one of the thresholds is exceeded | request is placed in the ring for a short delay `low_delay_ms` |
+| `High` | CPU > `cpu_threshold` and queue > `queue_size_threshold` | request is placed in the ring; when full, `high_reject_prob` is applied |
+| `Critical` | the system cannot drain the ring in time | requests are rejected with `503 Service Unavailable` |
 
-[migration.target]
-name = "dc-secondary"
-endpoint = "https://dc2.futriix.local:8080"
-timeout_sec = 30
 
-[migration.settings]
-batch_size = 1000
-workers = 4
-compression = "snappy"
-resume_enabled = true
-checkpoint_interval_sec = 30
-max_retries = 3
-retry_backoff_sec = 5
-exclude_collections = ["temp", "logs"]
+**2. Enqueue into the ring**
 
-[migration.delta]
-enabled = true
-interval_sec = 60
-max_lag_sec = 300
+```sh
+func (r *Ring) Enqueue(req *Request) EnqueueResult:
+    if r.size == r.capacity:
+        // Overflow — choose an eviction policy
+        if req.Priority > r.slots[r.tail].Priority:
+            evicted = r.slots[r.tail]       // evict the lower-priority one
+            r.slots[r.tail] = req
+            r.tail = (r.tail + 1) mod r.capacity
+            return Enqueued(evicted)
+        else:
+            return Rejected(reason="ring_full")
 
-[migration.validation]
-enabled = true
-sample_percent = 10
-max_errors = 100
+    r.slots[r.tail] = req
+    r.tail = (r.tail + 1) mod r.capacity
+    r.size++
+    return Enqueued(nil)
 ```
+
+**3. Draining (dequeue)**
+
+A separate drainer goroutine periodically takes requests from the head of the ring and passes them for execution:
+
+```sh
+func (r *Ring) drainLoop():
+    ticker = NewTicker(r.drain_interval)
+    for range ticker:
+        for r.size > 0 and systemHasCapacity():
+            req = r.slots[r.head]
+            r.slots[r.head] = nil
+            r.head = (r.head + 1) mod r.capacity
+            r.size--
+            go req.resume()             // execute outside the critical section
+```
+
+
+Why a separate goroutine: if requests were "drained" from the same thread that accepts them, the ring would not smooth the load but simply move it into the calling code. The drainer works asynchronously and can pause if systemHasCapacity() returns `false`.
+
+**4. Delay management**
+
+Each request in the ring has a deadline — the absolute time by which it must either be completed or rejected:
+
+```sh
+req.deadline = now + config.LowDelayMs
+```
+Before `resume()`, the drainer checks: if `now > req.deadline`, the request is rejected with `504 Gateway Timeout` rather than being executed "late." This guarantees that the client receives a response within a predictable time, even if the system is overloaded.
+
+**5. Adaptive tuning**
+
+Thresholds and delays are recalculated based on observed metrics:
+
+* queue_size_threshold — grows if the ring overflows regularly, and falls if it is almost always empty.
+* low_delay_ms — increases as draining time grows.
+* high_reject_prob — calculated as the share of requests that had to be evicted in the previous cycle.
+
+Adaptation is performed smoothly (exponential smoothing) to avoid oscillations.
+
+**Pseudocode of the request lifecycle**
+
+```sh
+Client → API Handler
+           │
+           ├─► Backpressure.Check()
+           │       │
+           │       ├─ Low      → execute immediately
+           │       ├─ Medium   → Enqueue(req) → resume() after low_delay_ms
+           │       ├─ High     → Enqueue(req) → resume() when capacity appears
+           │       └─ Critical → Reject(503)
+           │
+           └─► Ring.Enqueue(req)
+                   │
+                   ├─ free slot        → place, return Enqueued
+                   ├─ overflow         → evict a lower-priority request
+                   └─ impossible       → Reject(503)
+
+Drainer Loop
+   │
+   ├─ systemHasCapacity() == true  → req = Ring.Dequeue(); go req.resume()
+   ├─ systemHasCapacity() == false → sleep(drain_interval)
+   └─ req.deadline < now           → Reject(504)
+```
+
+**Configuration parameters**
+
+| Parameter | Default value | Purpose |
+|----------|----------------------|------------|
+| `enabled` | `false` | Enable the mechanism |
+| `cpu_threshold` | `0.8` | CPU threshold (0–1), above which requests are buffered |
+| `memory_threshold` | `0.85` | Memory threshold (0–1) |
+| `queue_size_threshold` | `10000` | Queue length threshold |
+| `connection_threshold` | `5000` | Connection count threshold |
+| `check_interval_ms` | `1000` | Load check interval |
+| `low_delay_ms` | `100` | Delay for the `Medium` level |
+| `medium_reject_prob` | `0` | Rejection probability at `Medium` (%) |
+| `high_reject_prob` | `50` | Rejection probability at `High` (%) |
+| `ring_capacity` | `4 × queue_size_threshold` | Ring size |
+
+
+**Guarantees**
+
+ * Bounded memory. The ring never exceeds ring_capacity slots.
+ * O(1) per operation. Insertion and removal do not depend on the ring size.
+ * No blocking on the writer. Enqueue does not wait — it either places, evicts, or rejects.
+ * Predictable latency. The deadline guarantees that the client receives a response within a predictable time.
+ * Transparency. All rejections are logged to audit (BACKPRESSURE_REJECT) with the reason and the current load level.
+
+
+**Limitations**
+
+* It is not a queue. FIFO order is not guaranteed when evicting by priority.
+*  It requires tuning for the load. If the ring is too small and the thresholds are strict, false positives are possible.
+*  It does not replace rate limiting. Buffer Ring smooths bursts but does not limit sustained request rate — that requires a separate rate limiter layer in front of the API.
+
+**Example**
+
+At 10,000 RPS and `cpu_threshold` = 0.8:
+
+1. At a peak of 15,000 RPS, CPU reaches 0.9 → `High` level.
+2. 5,000 "extra" requests enter the ring (capacity 40,000).
+3. The drainer releases them as CPU frees up — about 200 requests every 10 ms.
+4. If the peak lasts longer than `low_delay_ms`, "expired" requests are rejected with `504` — clients get fast degradation instead of timeouts.
+5. When the load drops to 8,000 RPS, the ring empties, and requests go directly again.
 
 <p align="right">(<a href="#readme-top">Back to top</a>)</p>
 
