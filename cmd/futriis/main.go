@@ -22,6 +22,13 @@
  *   - Заменён SIGHUP на SIGUSR1 (reload) + SIGTERM/SIGINT (shutdown)
  *   - Проверка nil для raftCoordinator перед использованием
  *
+ * ДОПОЛНИТЕЛЬНО ИСПРАВЛЕНО:
+ *   - repl.NewRepl теперь возвращает (*Repl, error), так как внутри
+ *     создаётся *readline.Instance (chzyer/readline), инициализация
+ *     которого может завершиться ошибкой (например, при отсутствии TTY
+ *     или проблемах с termios на OpenIndiana в single-user режиме).
+ *     Добавлена обработка ошибки инициализации REPL.
+ *
  * УДАЛЕНО:
  *   - WebUI полностью удалён из ядра. HTTP API (api.NewHTTPServer)
  *     продолжает работать и предоставляет весь функционал через REST.
@@ -317,7 +324,26 @@ func main() {
 
 	displayBanner(cfg.Cluster.Name, httpPort, raftCoordinator, cfg.Saga.Enabled)
 
-	replInstance := repl.NewRepl(store, raftCoordinator, logger, cfg, aclManager, pluginManager)
+	// =========================================================================
+	// ИСПРАВЛЕНО: repl.NewRepl теперь возвращает (*Repl, error),
+	// так как внутри создаётся *readline.Instance, инициализация
+	// которого может завершиться ошибкой (например, при отсутствии TTY
+	// или проблемах с termios на OpenIndiana в single-user режиме).
+	//
+	// Было:
+	//     replInstance := repl.NewRepl(store, raftCoordinator, logger, cfg, aclManager, pluginManager)
+	//
+	// Стало:
+	//     replInstance, err := repl.NewRepl(...)
+	//     if err != nil { ... }
+	// =========================================================================
+	replInstance, err := repl.NewRepl(store, raftCoordinator, logger, cfg, aclManager, pluginManager)
+	if err != nil {
+		logger.Error("Failed to initialize REPL: " + err.Error())
+		utils.PrintError("Failed to initialize REPL: " + err.Error())
+		os.Exit(1)
+	}
+	defer replInstance.Close()
 
 	// ========== GRACEFUL SHUTDOWN ==========
 	sigChan := make(chan os.Signal, 1)
