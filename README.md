@@ -567,9 +567,7 @@ $ ./futriix
 
 Futriix processes log routing into two isolated files depending on the source vector:
 * `futriix.log`: System core journal capturing background engine lifecycle tasks handled via terminal interfaces (server runs, Raft coordination tasks, transaction lifecycles, ACL parsing, and critical core errors).
-* `webui.log`: Dedicated administrative interface logging file (login evaluation results, profile image updates, trigger definitions, index generation parameters, and storage migration metrics).
-
-Both environments process files in structured lines using text strings with timestamp patterns for `futriix.log` and JSON layouts for `webui.log`. Rotation mechanisms prevent unbounded storage growth (defaults limit `webui.log` to a maximum ceiling of 10,000 index records).
+This environment process file in structured lines using text strings with timestamp patterns for `futriix.log`. Rotation mechanisms prevent unbounded storage growth (defaults limit `webui.log` to a maximum ceiling of 10,000 index records).
 
 <p align="right">(<a href="#readme-top">Back to top</a>)</p>
 
@@ -1320,7 +1318,7 @@ curl -X POST http://localhost:8080/api/trigger/company/employees/create \
 
 ## Lua Plugins
 To extend the functional capabilities of the DBMS **without modifying its source code**, Futriix implements a plugin system via Lua scripts with an isolated environment.  
-Plugins have access to the database, transactions, triggers, can log events, and interact via an event bus. They are also accessible in the web interface.  
+Plugins have access to the database, transactions, triggers, can log events, and interact via an event bus.  
 Furthermore, plugins can be used to write alternative storage engines for the DBMS in Lua without changing its core source code.
 
 ### Viewing Plugin System Status
@@ -1851,7 +1849,6 @@ This section answers the most common questions to help you quickly understand th
 * [x] Implement Replication Pipelining — grouping multiple commands into a single Raft log entry to reduce network overhead
 * [x] Implement Batch commit — committing multiple operations in a single cycle to lower fsync calls
 * [x] Implement Dynamic Shard Redistribution — automatic re-sharding upon adding new nodes to the cluster
-* [x] Implement Observability — in a primitive form via the web interface
 * [x] Implement "Joint consensus" (safe cluster configuration transition)
 * [x] Implement leveled logging (DEBUG/INFO/WARN/ERROR) for tracking events
 * [x] Implement Segmented WAL — dividing WAL into 64MB segments with automatic rotation
