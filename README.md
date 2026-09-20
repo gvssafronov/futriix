@@ -1840,12 +1840,6 @@ This section answers the most common questions to help you quickly understand th
 * [x] Implement data compression based on the "Brotli" protocol
 * [x] Implement DBMS dump import and export in "MessagePack" format
 * [x] Fix log journal writing bugs (include current year alongside current time in log records)
-* [x] In the web interface, add support for a small profile picture to the left of the "admin" text in the bottom left corner
-* [x] In the web interface, remove hardcoded credentials (`admin`; `admin`) from the source code
-* [x] In the web interface, implement the ability to change the authentication login and password (store default `admin`/`admin` credentials in a hidden `.credentials` file located in the `futriix` directory)
-* [x] In the web interface, add the ability to read the `futriix.log` log file, which records all operations performed in the WUI during a session (e.g., database created, collection dropped), including failed operations
-* [x] In the web interface, add the ability to append a new administrator user whose credentials will be saved in the hidden `.credentials` file inside the `futriix` directory
-* [x] In the web interface, add the ability to manage plugins (enable, disable)
 * [x] Rewrite build scripts `build.sh` and `vendor_build.sh` to remove dependency on the `gcc` compiler so it does not need to be installed separately in the "OpenIndiana Hipster" operating system
 * [x] Replace the `raft-boltdb` library with an embedded file storage engine
 * [x] Implement unique and composite indexes
