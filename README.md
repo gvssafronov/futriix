@@ -1840,7 +1840,6 @@ This section answers the most common questions to help you quickly understand th
 * [x] Implement data compression based on the "Brotli" protocol
 * [x] Implement DBMS dump import and export in "MessagePack" format
 * [x] Fix log journal writing bugs (include current year alongside current time in log records)
-* [x] Implement a Web User Interface (WUI) based on the custom "futriis" engine to manage the DBMS via browser
 * [x] In the web interface, add support for a small profile picture to the left of the "admin" text in the bottom left corner
 * [x] In the web interface, remove hardcoded credentials (`admin`; `admin`) from the source code
 * [x] In the web interface, implement the ability to change the authentication login and password (store default `admin`/`admin` credentials in a hidden `.credentials` file located in the `futriix` directory)
