@@ -29,7 +29,7 @@
 18. [Constraints](#constraints)
 19. [Import-Export](#import-export)
 20. [HTTP API](#http-api)
-21. [Monitoring and Visualization: Prometheus & Grafana Integration](#monitoring-and-visualization-:-prometheus-&-grafana-integration)
+21. [Integration with the Prometheus and Grafana sections](#integration-with-the-prometheus-and-grafana-sections)
 22. [Access Control](#access-control)
 23. [Lua Plugins](#lua-plugins)
 24. [Triggers](#triggers)
@@ -1317,11 +1317,9 @@ curl -X POST http://localhost:8080/api/trigger/company/employees/create \
 
 ---
 
-## TESTSSS
+## Integration with the Prometheus and Grafana sections
 
-## Monitoring and Visualization: Prometheus & Grafana Integration
-
-### Introduction
+**Introduction**
 
 `futriiX` was designed from the start as a distributed database that is convenient to operate from the command line and via a REST API. For day-to-day operations, however, operators prefer a **web interface** to observe cluster state and react to incidents quickly. Instead of shipping a built-in WebUI, `futriiX` integrates with the industry-standard monitoring stack **Prometheus** and **Grafana**, which together provide a full-featured web interface for observing and managing data: dashboards, charts, tables, alerts, and ad-hoc queries against the REST API — all from a browser.
 
