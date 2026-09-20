@@ -29,11 +29,12 @@
 18. [Constraints](#constraints)
 19. [Import-Export](#import-export)
 20. [HTTP API](#http-api)
-21. [Access Control](#access-control)
-22. [Lua Plugins](#lua-plugins)
-23. [Triggers](#triggers)
-24. [Data Compression](#data-compression)
-25. [FAQ](#faq)
+21. [Monitoring and Visualization: Prometheus & Grafana Integration](#monitoring-and-visualization-:-prometheus-&-grafana-integration)
+22. [Access Control](#access-control)
+23. [Lua Plugins](#lua-plugins)
+24. [Triggers](#triggers)
+25. [Data Compression](#data-compression)
+26. [FAQ](#faq)
 27. [Roadmap](#roadmap)
 28. [Contacts](#contacts)
 
@@ -418,7 +419,7 @@ Raft log (raft_data/)
 
 ### Interaction Vectors:
 * **REPL**: `config set cluster.heartbeat_timeout_ms 2000`
-* **HTTP API**: `POST /api/v1/config`
+* ****: `POST /api/v1/config`
 * **CLI**: `futriix config set --key=... --value=...`
 * **Subscription**: Internal processes monitor configuration changes in real time.
 
@@ -466,7 +467,7 @@ Raft log (raft_data/)
 * `description`: Audit explanation text outlining the reason for modification.
 * `changed_by`: Author identifier executing the command (for tracking and logging).
 
-### Example Changes via HTTP API
+### Example Changes via 
 ```sh
 # Fetch properties
 curl -X GET http://localhost:8080/api/v1/config
@@ -580,7 +581,7 @@ Verification validation uses five core functional test categories developed in L
 The corresponding testing scripts are stored in the `/futriix/tests/` target path folder.
 
 > [!IMPORTANT]
-> 1. Confirm that the core storage is running and listening properly on HTTP API port 8080 before triggering tests.
+> 1. Confirm that the core storage is running and listening properly on  port 8080 before triggering tests.
 > 2. Performance testing routines can span multiple minutes depending on evaluation data volumes.
 
 Execution command sequences:
@@ -1311,6 +1312,246 @@ curl -X POST http://localhost:8080/api/trigger/company/employees/create \
 -H "X-Session-ID: abc123" \
 -d '{"name":"audit","event":"AFTER_INSERT","action":"log"}'
 ```
+
+[To top](#readme-top)
+
+---
+
+## TESTSSS
+
+## Monitoring and Visualization: Prometheus & Grafana Integration
+
+### Introduction
+
+`futriiX` was designed from the start as a distributed database that is convenient to operate from the command line and via a REST API. For day-to-day operations, however, operators prefer a **web interface** to observe cluster state and react to incidents quickly. Instead of shipping a built-in WebUI, `futriiX` integrates with the industry-standard monitoring stack **Prometheus** and **Grafana**, which together provide a full-featured web interface for observing and managing data: dashboards, charts, tables, alerts, and ad-hoc queries against the REST API — all from a browser.
+
+This integration delivers three key benefits:
+
+- **Single pane of glass.** All cluster, storage, HTTP, replication, and SAGA-transaction metrics are collected in one place — Grafana.
+- **Industry standard.** Prometheus and Grafana are the de-facto observability standard used in nearly every production environment, so the integration adds no exotic dependencies.
+- **Cross-platform.** The metrics exporter is built on the Go standard library only and runs identically on Linux and OpenIndiana (illumos) — the platforms `futriiX` actually targets.
+
+The rest of this section explains how to enable metrics, wire up Prometheus and Grafana, and which metrics and endpoints are available.
+
+### Overview
+
+`futriiX` exposes metrics in **Prometheus text exposition format**. That means you can:
+
+- Attach **Prometheus** as a time-series database and configure pull-based scraping of `/metrics`.
+- Attach **Grafana** to Prometheus and build dashboards for cluster state, workload, replication, and HTTP traffic.
+- Additionally use Grafana **JSON API (Infinity) datasource** to query the REST API (`/api/cluster/status`, `/api/db/...`) and render table panels with raw data.
+
+The metrics stack works **identically on Linux and OpenIndiana (illumos)**: the implementation uses only the Go standard library (`net/http`, `sync/atomic`, `math`) with no third-party dependencies and no platform-specific syscalls.
+
+### Enabling
+
+In `config.toml`:
+
+```toml
+[metrics]
+# Enable Prometheus-format metrics
+enabled = true
+# Collection interval in seconds (default 15)
+collect_interval_sec = 15
+```
+
+If the section is missing, metrics are disabled (`enabled = false`) and defaults apply. If `enabled = true` but `collect_interval_sec <= 0`, the validator fails the start-up.
+
+### HTTP endpoints
+
+After `futriiX` starts, the following endpoints are available:
+
+| Endpoint | Purpose |
+|---|---|
+| `GET /metrics` | Prometheus text exposition (`text/plain; version=0.0.4`). **Unauthenticated** by convention — restrict access at the network/firewall level. |
+| `GET /-/healthy` | Liveness probe. Always `200 OK` if the process is alive. |
+| `GET /api/metrics` | JSON snapshot (rate limiter, storage, cluster). Handy for Grafana JSON API / Infinity datasource. |
+
+### Exposed metrics
+
+**Process:**
+
+| Metric | Type | Description |
+|---|---|---|
+| `futriis_up` | gauge | `1` if the process is running. |
+| `futriis_uptime_seconds` | gauge | Seconds since process start. |
+
+**Storage:**
+
+| Metric | Type | Labels | Description |
+|---|---|---|---|
+| `futriis_storage_databases_total` | gauge | — | Number of databases. |
+| `futriis_storage_documents_total` | gauge | — | Total documents across all collections. |
+| `futriis_database_documents_total` | gauge | `database` | Documents per database. |
+| `futriis_database_size_bytes` | gauge | `database` | Database size in bytes. |
+
+**Cluster:**
+
+| Metric | Type | Labels | Description |
+|---|---|---|---|
+| `futriis_cluster_nodes` | gauge | `status=total\|active\|failed` | Node count by status. |
+| `futriis_cluster_has_leader` | gauge | — | `1` if a leader is elected, otherwise `0`. |
+| `futriis_cluster_health` | gauge | `health` | Health label (`healthy` / `degraded` / `critical`). |
+| `futriis_cluster_raft_term` | gauge | — | Current Raft term. |
+| `futriis_node_last_seen_seconds` | gauge | `node_id`, `ip` | Unix timestamp of last node contact, in seconds. |
+
+**HTTP (middleware on `/api/*`):**
+
+| Metric | Type | Labels | Description |
+|---|---|---|---|
+| `futriis_http_requests_total` | counter | `method`, `path`, `status` | Number of HTTP requests. |
+| `futriis_http_request_duration_seconds` | histogram | `method`, `path` | HTTP request duration (buckets: 1ms, 5ms, 10ms, 25ms, 50ms, 100ms, 250ms, 500ms, 1s, 2.5s, 5s). |
+
+**Replication & backpressure (when the corresponding subsystems are active):**
+
+| Metric | Type | Description |
+|---|---|---|
+| `futriis_replication_total` | counter | Total replication operations. |
+| `futriis_replication_failed_total` | counter | Failed replication operations. |
+| `futriis_backpressure_level` | gauge | Backpressure level (0 = none, 4 = critical). |
+| `futriis_migration_tasks` | gauge | Migration tasks by status. |
+
+### Prometheus setup
+
+Example `prometheus.yml`:
+
+```yaml
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+scrape_configs:
+  - job_name: futriis
+    metrics_path: /metrics
+    static_configs:
+      - targets: ['futriis-host:8080']
+        labels:
+          cluster: futriis-prod
+```
+
+Run with Docker:
+
+```sh
+docker run --rm -p 9090:9090 \
+  -v "$PWD/prometheus.yml:/etc/prometheus/prometheus.yml:ro" \
+  prom/prometheus
+```
+
+Verify:
+
+```sh
+curl -s http://futriis-host:8080/metrics | head -40
+curl -s http://localhost:9090/api/v1/targets | jq .
+```
+
+### Grafana setup
+
+**Grafana** is a visualization and observability platform that turns the collected Prometheus metrics into live dashboards, charts, and tables. Grafana is what gives `futriiX` end users a **web interface**: there is nothing to code or host yourself — just point Grafana at Prometheus, and every cluster, storage, and HTTP metric becomes available in the browser. In addition, via the **Infinity** plugin (or the built-in JSON API datasource), Grafana can query the `futriiX` REST API directly — exposing raw data (database list, cluster status, documents) as tables and panels.
+
+Setup steps:
+
+1. Open Grafana (`http://grafana-host:3000`) and sign in as admin.
+2. **Configuration → Data Sources → Add data source** → choose **Prometheus**.
+3. Set **URL** = `http://prometheus-host:9090`, **Scrape interval** = `15s`, click **Save & Test**.
+4. (Optional) Add a second datasource of type **Infinity** or **JSON API**:
+   - **Base URL** = `http://futriis-host:8080`
+   - **Allowed hosts** = `futriis-host`
+   - **Auth** = none (or Basic Auth if a reverse proxy fronts futriiX).
+5. **Create → Dashboard → Add visualization**:
+   - "Cluster health" — PromQL: `futriis_cluster_nodes{status="active"}`.
+   - "Documents total" — `futriis_storage_documents_total`.
+   - "HTTP RPS" — `sum(rate(futriis_http_requests_total[1m])) by (method)`.
+   - "HTTP p95 latency" — `histogram_quantile(0.95, sum(rate(futriis_http_request_duration_seconds_bucket[5m])) by (le))`.
+   - "Databases" table — Infinity datasource → GET `/api/cluster/status`.
+
+### Useful PromQL queries
+
+```promql
+# Active nodes
+futriis_cluster_nodes{status="active"}
+
+# Leader elected?
+futriis_cluster_has_leader
+
+# Request rate (RPS)
+sum(rate(futriis_http_requests_total[1m]))
+
+# 95th percentile request latency
+histogram_quantile(0.95,
+  sum(rate(futriis_http_request_duration_seconds_bucket[5m])) by (le))
+
+# 5xx error ratio
+sum(rate(futriis_http_requests_total{status=~"5.."}[5m]))
+  / sum(rate(futriis_http_requests_total[5m]))
+
+# Alert: no leader for more than a minute
+min_over_time(futriis_cluster_has_leader[1m]) == 0
+```
+
+### Example alerting rules (Prometheus)
+
+```yaml
+groups:
+  - name: futriis
+    rules:
+      - alert: FutriisDown
+        expr: futriis_up == 0
+        for: 30s
+        labels: { severity: critical }
+        annotations:
+          summary: "futriiX instance is down"
+      - alert: FutriisNoLeader
+        expr: min_over_time(futriis_cluster_has_leader[1m]) == 0
+        for: 1m
+        labels: { severity: critical }
+        annotations:
+          summary: "futriiX cluster has no elected leader"
+      - alert: FutriisHighHTTPErrorRate
+        expr: |
+          sum(rate(futriis_http_requests_total{status=~"5.."}[5m]))
+            / sum(rate(futriis_http_requests_total[5m])) > 0.05
+        for: 5m
+        labels: { severity: warning }
+        annotations:
+          summary: "futriiX HTTP 5xx rate > 5%"
+      - alert: FutriisDegraded
+        expr: futriis_cluster_health{health="degraded"} == 1
+        for: 2m
+        labels: { severity: warning }
+        annotations:
+          summary: "futriiX cluster is degraded"
+```
+
+### Security notes
+
+- `/metrics` is **unauthenticated** by Prometheus convention. Recommended hardening:
+  - do not expose it to the public internet;
+  - restrict access by IP/network (firewall, security group);
+  - or put a reverse proxy with Basic Auth in front and disable the built-in endpoint.
+- `/api/*` is protected by ACL sessions (`X-Session-ID` / `Authorization: Bearer ...`).
+- Metrics carry no user data — only aggregates and labels such as database names, node IDs, and HTTP paths.
+
+### Disabling
+
+In `config.toml`:
+
+```toml
+[metrics]
+enabled = false
+```
+
+In that case:
+- `/metrics` still returns baseline process metrics (`futriis_up`, `futriis_uptime_seconds`).
+- Periodic collection and registry publication are stopped.
+
+### Troubleshooting
+
+| Symptom | Cause | Fix |
+|---|---|---|
+| `/metrics` returns 404 | HTTP server failed to start or route not registered | Check logs, verify `cfg.API.Port`; `/metrics` is always registered. |
+| Only `futriis_up` / `futriis_uptime_seconds` | Collector not attached (`SetMetricsCollector` not called) or `metrics.enabled = false` | Set `[metrics].enabled = true`; ensure `main.go` passes the collector to the HTTP server. |
+| Metrics not updating | Interval too long or collector stopped | Check `collect_interval_sec`; look for `Prometheus metrics collector started` in logs. |
+| Grafana cannot reach Prometheus | Wrong URL / network policy | `curl http://prometheus-host:9090/-/healthy`; check firewall between Grafana and Prometheus. |
 
 [To top](#readme-top)
 
