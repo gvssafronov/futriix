@@ -1873,6 +1873,9 @@ This section answers the most common questions to help you quickly understand th
 * [x] Implement TLS and backpressure
 * [x] Implement runtime limits for collections and data schema migrations
 * [x] Implement a "hot backup" system
+* [x] Implement Multi-line input in the REPL — queries can now span multiple lines, just like in mongosh.
+* [x] Implement REPL pager — long results are displayed using `less` or a built-in pager.
+* [x] Implement REPL autocomplete — for collection names, fields, and operators. 
 * [x] Implement a Golang installation script for Illumos-based operating systems
 * [x] Implement Automatic sharding
 * [x] Implement TLS for inter-node communication
