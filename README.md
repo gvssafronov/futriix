@@ -54,7 +54,6 @@ Data management is fundamentally based on **timestamps**: they provide record ve
 * **MVCC** — transaction isolation
 * **Horizontal scaling**
 
-Features a **WUI interface** for administration. The project is developed within the OpenIndiana ecosystem, distributed under the CDDL license, and is compatible with OS choices based on Illumos/Solaris (OpenIndiana Hipster, Oracle Solaris) as well as popular Linux distributions (Debian, Ubuntu, Fedora).
 
 > [!IMPORTANT]
 > **Use Cases Where futriix is the Right Choice:**
@@ -109,7 +108,6 @@ All additional software (including the project compilation script `build.sh`) is
 * **OLTP (Online Transactional Processing)**: A real-time transaction processing technology. Its primary task is ensuring fast and reliable execution of operations occurring every second in a business. They provide rapid execution of insert, update, and delete operations while maintaining transaction integrity and reliability.
 * **OLAP (Online Analytical Processing)**: A technology that works with historical arrays of information, extracting patterns and analyzing large volumes of data; supports multi-dimensional queries and complex analytical operations. This technology is optimized for executing complex queries and providing summary info for management decisions.
 * **HTAP (Hybrid Transactional and Analytical Processing)**: A technology that efficiently combines operational and analytical requests, i.e., OLTP and OLAP classes.
-* **WUI (Web User Interface)**: A futriix project term denoting a web-based interface (interface running in a web browser).
 * **Workflow**: A principle of business process organization where repeating tasks are represented as a sequence of standard steps.
 * **Lock-free algorithms**: Algorithms guaranteeing that at least one execution thread makes progress (completes an operation) in a finite number of steps, even if other threads are delayed or suspended. Individual threads may experience delays, but the system as a whole continues progressing.
 * **Wait-free algorithms**: Algorithms guaranteeing that every thread completes its operation within a bounded (finite) number of steps, regardless of the state or behavior of remaining threads. This ensures an absolute absence of delays and starvation for any concurrent participant.
@@ -139,17 +137,7 @@ While `futriix` maintains cross-platform compatibility and fully supports Linux,
 ## Architectural Notes and Security Proposals
 
 ### Architectural Notes
-Futriix was originally developed as a monolith whose internal core (including the framework for WUI implementation) carried the code name "Futriis". With the transition to the final name "Futriix", external interfaces were renamed, but internal variables retained the original name to minimize changes. Also, the framework for the WUI implementation kept its former name "Futriis" and was integrated into the database core. Consider `futriis` an internal alias for `futriix`, and remember that currently: *"Futriis is the historical name of the Futriix core"*.
-
-### Web Interface Authentication
-**General Provisions**  
-The DBMS web interface implements basic authentication based on a "user identifier" and "password" pair using the SHA-256 encryption algorithm. Since Futriix is operated predominantly in a Closed Software Environment (CSE) where organizational and network measures eliminate traffic interception and credential brute-forcing, the implemented authentication mechanism is sufficient within the accepted threat model.
-
-* **Password Requirements**: Minimum length of 4 characters.
-* **Connection Procedure**:
-  1. The CSE Administrator opens the local IP address of the DBMS (port XXXX) via a browser located within the same network segment.
-  2. The system prompts for a login and password.
-  3. Since the environment is closed, physical or logical access to the workstation is implied to be restricted to authorized personnel only.
+Futriix was originally developed as a monolith whose internal core carried the code name "Futriis". With the transition to the final name "Futriix", external interfaces were renamed, but internal variables retained the original name to minimize changes. Also, the framework for the WUI implementation kept its former name "Futriis" and was integrated into the database core. Consider `futriis` an internal alias for `futriix`, and remember that currently: *"Futriis is the historical name of the Futriix core"*.
 
 <p align="right">(<a href="#readme-top">Back to top</a>)</p>
 
