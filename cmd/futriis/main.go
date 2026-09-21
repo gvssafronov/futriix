@@ -25,6 +25,12 @@
  *   - Интеграция с Prometheus: /metrics endpoint
  *   - ДОБАВЛЕНО: поддержка TLS на HTTP API (вариант A — TLS внутри futriiX).
  *     Теперь используется api.NewHTTPServerWithTLS(..., &cfg.Security).
+ *   - ИСПРАВЛЕНО (UI): убраны лишние пустые строки перед баннером, чтобы
+ *     строка "futriis 3i²(by 22.09.2026)" шла сразу после сообщения ACL
+ *     о созданном admin-пользователе.
+ *   - ИСПРАВЛЕНО (UI): текст баннера окрашивается в точный #00bfff
+ *     (Deep Sky Blue) через utils.PrintlnDeepSkyBlueReset, чтобы совпадать
+ *     с цветом надписи "futriis 3i²(by 22.09.2026)".
  */
 
 package main
@@ -284,6 +290,10 @@ func main() {
 		logger.Info("  - Automatic data persistence - ENABLED")
 	}
 
+	// ИСПРАВЛЕНО (UI): убраны лишние пустые строки перед баннером.
+	// Внутри displayBanner уже есть utils.Println("") первой строкой,
+	// чтобы отделить баннер от ACL-сообщения. Строка "futriis 3i²(by
+	// 22.09.2026)" идёт сразу после сообщения ACL.
 	displayBanner(cfg.Cluster.Name, httpPort, raftCoordinator, cfg.Saga.Enabled, cfg.Metrics.Enabled)
 
 	replInstance, err := repl.NewRepl(store, raftCoordinator, logger, cfg, aclManager, pluginManager)
@@ -497,21 +507,21 @@ type clusterStatusAdapter struct {
 	st *cluster.ClusterStatus
 }
 
-func (a *clusterStatusAdapter) GetTotalNodes() int   { return a.st.TotalNodes }
-func (a *clusterStatusAdapter) GetActiveNodes() int  { return a.st.ActiveNodes }
-func (a *clusterStatusAdapter) GetFailedNodes() int  { return a.st.FailedNodes }
-func (a *clusterStatusAdapter) GetLeaderID() string  { return a.st.LeaderID }
-func (a *clusterStatusAdapter) GetHealth() string    { return a.st.Health }
+func (a *clusterStatusAdapter) GetTotalNodes() int  { return a.st.TotalNodes }
+func (a *clusterStatusAdapter) GetActiveNodes() int { return a.st.ActiveNodes }
+func (a *clusterStatusAdapter) GetFailedNodes() int { return a.st.FailedNodes }
+func (a *clusterStatusAdapter) GetLeaderID() string { return a.st.LeaderID }
+func (a *clusterStatusAdapter) GetHealth() string   { return a.st.Health }
 
 type nodeInfoAdapter struct {
 	n *cluster.NodeInfo
 }
 
-func (a *nodeInfoAdapter) GetID() string       { return a.n.ID }
-func (a *nodeInfoAdapter) GetIP() string       { return a.n.IP }
-func (a *nodeInfoAdapter) GetPort() int        { return a.n.Port }
-func (a *nodeInfoAdapter) GetStatus() string   { return a.n.Status }
-func (a *nodeInfoAdapter) GetLastSeen() int64  { return a.n.LastSeen }
+func (a *nodeInfoAdapter) GetID() string      { return a.n.ID }
+func (a *nodeInfoAdapter) GetIP() string      { return a.n.IP }
+func (a *nodeInfoAdapter) GetPort() int       { return a.n.Port }
+func (a *nodeInfoAdapter) GetStatus() string  { return a.n.Status }
+func (a *nodeInfoAdapter) GetLastSeen() int64 { return a.n.LastSeen }
 
 // ==================== Утилиты ====================
 
@@ -574,10 +584,19 @@ func isPortListening(port int) bool {
 	return true
 }
 
+// displayBanner выводит стартовый баннер.
+//
+// ИСПРАВЛЕНО (UI): текст баннера окрашивается точным цветом
+// #00bfff (Deep Sky Blue) через utils.PrintlnDeepSkyBlueReset, чтобы
+// совпадать с цветом надписи "futriis 3i²(by 22.09.2026)".
+//
+// Внутри уже есть utils.Println("") первой строкой, чтобы отделить
+// баннер от ACL-сообщения. Дополнительные пустые строки в main() не
+// добавляются (см. комментарий перед вызовом displayBanner).
 func displayBanner(clusterName string, httpPort int, coordinator *cluster.RaftCoordinator, sagaEnabled, metricsEnabled bool) {
 	utils.Println("")
 	bannerLines := []string{
-		"                futriis 3i²(by 02.04.2026)                 ",
+		"                futriis 3i²(by 22.09.2026)                 ",
 		"                Distributed Document-Store in-memory database with support lua plugins   ",
 		"                Cluster status: enable (Raft consensus)",
 		"                Cluster features: Pipeline Replication, Batch Commit, Dynamic Resharding",
@@ -624,7 +643,9 @@ func displayBanner(clusterName string, httpPort int, coordinator *cluster.RaftCo
 	}...)
 
 	for _, line := range bannerLines {
-		utils.PrintInfo(line)
+		// ИСПРАВЛЕНО: используем точный цвет #00bfff (Deep Sky Blue),
+		// совпадающий с цветом заголовка баннера.
+		utils.PrintlnDeepSkyBlueReset(line)
 	}
 }
 
