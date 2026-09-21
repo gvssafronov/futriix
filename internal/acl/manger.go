@@ -30,21 +30,6 @@
 //   - Метод Stop() для остановки фоновой очистки сессий
 //   - Защита от nil-указателей в GetUserInfo/GetRolePermissions
 //
-// ИСПРАВЛЕНО (UI):
-//   - Убрана рамка "====" и пустые строки вокруг сообщения о созданном
-//     admin-пользователе. Сразу после сообщения должен идти баннер futriis.
-//   - Текст сообщения окрашивается в #00bfff (Deep Sky Blue), чтобы
-//     совпадать с цветом баннера futriis 3i²(by 02.04.2026).
-//   - Цвет применяется только если stderr — это TTY (защита от попадания
-//     ANSI-кодов в файл лога при перенаправлении).
-//   - Добавлен фолбэк по уровню поддержки терминала:
-//        True Color (COLORTERM=truecolor) -> \033[38;2;0;191;255m
-//        256-цветный (TERM=xterm-256color) -> \033[38;5;39m
-//        базовый ANSI -> \033[96m (bright cyan)
-//     Это обеспечивает корректный цвет и на Linux, и на OpenIndiana
-//     (illumos), где xterm по умолчанию не поддерживает True Color.
-//   - Пакет pkg/utils намеренно НЕ импортируется, чтобы не создавать
-//     потенциальную циклическую зависимость (utils → acl → utils).
 
 package acl
 
@@ -83,6 +68,7 @@ const (
 	// Параметры сессий
 	sessionTTL          = 24 * time.Hour
 	sessionCleanupEvery = 10 * time.Minute
+	maxSessionsPerUser  = 16
 
 	// Параметры блокировки аккаунта
 	maxFailedAttempts = 5
@@ -101,6 +87,13 @@ const (
 // usernameRegex разрешает только безопасные символы в имени пользователя.
 var usernameRegex = regexp.MustCompile(`^[a-zA-Z0-9_.@-]+$`)
 
+// permissionRegex валидирует формат разрешения:
+//   - "*:*"                 — полный доступ
+//   - "db.coll:op"          — конкретный ресурс и операция
+//   - "db.*:op"             — wildcard коллекции
+// где db/coll/op — непустые строки из [A-Za-z0-9_*.-] (op — [A-Za-z0-9_*]).
+var permissionRegex = regexp.MustCompile(`^([A-Za-z0-9_.*-]+)\.([A-Za-z0-9_*.-]+):([A-Za-z0-9_*]+)$|^\*:\*$`)
+
 // =============================================================================
 // ТИПЫ
 // =============================================================================
@@ -114,6 +107,13 @@ const (
 	PermDelete PermissionType = "delete"
 	PermAdmin  PermissionType = "admin"
 )
+
+// Logger — минимальный интерфейс для логирования внутри ACL.
+// Сделан локально, чтобы не тянуть internal/log (и не создавать циклов).
+type Logger interface {
+	Warn(msg string)
+	Info(msg string)
+}
 
 // User представляет пользователя системы.
 //
@@ -133,13 +133,18 @@ type User struct {
 	LockedUntil    int64    `msgpack:"locked_until,omitempty"`
 }
 
-// Session представляет активную сессию пользователя
+// Session представляет активную сессию пользователя.
+//
+// ИСПРАВЛЕНО: добавлены CreatedByIP и UserAgent — для привязки сессии
+// к клиенту (мягкая защита от session hijacking).
 type Session struct {
-	ID        string   `msgpack:"id"`
-	Username  string   `msgpack:"username"`
-	Roles     []string `msgpack:"roles"`
-	CreatedAt int64    `msgpack:"created_at"`
-	ExpiresAt int64    `msgpack:"expires_at"`
+	ID          string   `msgpack:"id"`
+	Username    string   `msgpack:"username"`
+	Roles       []string `msgpack:"roles"`
+	CreatedAt   int64    `msgpack:"created_at"`
+	ExpiresAt   int64    `msgpack:"expires_at"`
+	CreatedByIP string   `msgpack:"created_by_ip,omitempty"`
+	UserAgent   string   `msgpack:"user_agent,omitempty"`
 }
 
 // Role представляет роль с набором разрешений
@@ -148,12 +153,22 @@ type Role struct {
 	Permissions []string `msgpack:"permissions"`
 }
 
-// ACLManager управляет доступом к БД
+// ACLManager управляет доступом к БД.
+//
+// ВАЖНО: sync.Map используется для чтений без блокировок. Все
+// read-modify-write операции (Authenticate, ChangePassword, ...)
+// защищены m.mu — иначе возможны потерянные обновления.
 type ACLManager struct {
-	users    sync.Map
-	roles    sync.Map
-	sessions sync.Map
-	mu       sync.RWMutex
+	users    sync.Map // map[string]*User
+	roles    sync.Map // map[string]*Role
+	sessions sync.Map // map[string]*Session
+
+	// mu защищает read-modify-write операции над users/roles/sessions.
+	// Чтения через sync.Map.Load не блокируются.
+	mu sync.RWMutex
+
+	logger Logger
+
 	stopChan chan struct{}
 	wg       sync.WaitGroup
 	stopOnce sync.Once
@@ -216,11 +231,10 @@ func colorizeACLMessage(s string) string {
 // со случайным паролем, который выводится в stderr. Пользователь guest
 // не создаётся — если нужен гостевой доступ, создайте его явно.
 //
-// ИСПРАВЛЕНО (UI): убраны рамка "====" и пустые строки вокруг сообщения
-// о созданном admin-пользователе. Сразу после сообщения идёт баннер futriis
-// (см. displayBanner в cmd/futriis/main.go). Текст окрашивается в #00bfff
-// с фолбэком на 256-цветный/базовый ANSI для корректного отображения
-// в терминалах OpenIndiana. Если stderr перенаправлен в файл — без цвета.
+// ИСПРАВЛЕНО (UI): убраны рамка "====" и пустые строки вокруг сообщения.
+// ИСПРАВЛЕНО (безопасность): при сбое PBKDF2 больше НЕ используем пароль
+// в открытом виде в качестве хеша — паникуем с понятной ошибкой, чтобы
+// сервис не поднялся с незащищённым паролем.
 func NewACLManager() *ACLManager {
 	m := &ACLManager{
 		stopChan: make(chan struct{}),
@@ -242,8 +256,9 @@ func NewACLManager() *ACLManager {
 
 	adminHash, err := hashPassword(adminPassword)
 	if err != nil {
-		// Fallback: сохраняем пароль в legacy-формате, чтобы не сломать старт
-		adminHash = adminPassword
+		// ИСПРАВЛЕНО: не сохраняем пароль в открытом виде.
+		// Паникуем — сервис не должен стартовать с небезопасным ACL.
+		panic(fmt.Sprintf("acl: failed to hash admin password: %v", err))
 	}
 
 	adminUser := &User{
@@ -256,14 +271,13 @@ func NewACLManager() *ACLManager {
 	}
 	m.users.Store("admin", adminUser)
 
-	// ИСПРАВЛЕНО (UI): убраны рамка "====" и пустые строки вокруг сообщения.
+	// ИСПРАВЛЕНО (UI): убрана пустая строка " \n" (в ней был лишний пробел).
 	// Сразу после этого блока main.go вызывает displayBanner, который
-	// начинает вывод со строки "futriis 3i²(by 02.04.2026)" (предварённой
-	// одной пустой строкой внутри самого displayBanner).
+	// начинает вывод со строки "futriis 3i²(by 02.04.2026)".
 	//
 	// Пароль по-прежнему идёт в stderr (не в stdout), чтобы его можно
 	// было отделить от обычного вывода и не логировать.
-        fmt.Fprintln(os.Stderr, colorizeACLMessage(" \n"))
+	fmt.Fprintln(os.Stderr, colorizeACLMessage("\n"))
 	fmt.Fprintln(os.Stderr, colorizeACLMessage("  ACL: создан пользователь 'admin' со случайным паролем."))
 	fmt.Fprintln(os.Stderr, colorizeACLMessage(fmt.Sprintf("  Пароль: %s", adminPassword)))
 	fmt.Fprintln(os.Stderr, colorizeACLMessage("  Смените пароль после первого входа командой 'acl change-password'!"))
@@ -273,6 +287,24 @@ func NewACLManager() *ACLManager {
 	go m.sessionCleanupLoop()
 
 	return m
+}
+
+// SetLogger устанавливает логгер (опционально).
+// Вызывается после NewACLManager, если приложение хочет логировать
+// события ACL (неудачные входы, блокировки аккаунтов и т.п.).
+func (m *ACLManager) SetLogger(l Logger) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	m.logger = l
+}
+
+func (m *ACLManager) logWarn(msg string) {
+	m.mu.RLock()
+	l := m.logger
+	m.mu.RUnlock()
+	if l != nil {
+		l.Warn(msg)
+	}
 }
 
 // =============================================================================
@@ -391,12 +423,50 @@ func validatePassword(password string) error {
 	return nil
 }
 
+// validatePermission проверяет формат строки разрешения.
+// Допустимые формы:
+//   - "*:*"
+//   - "database.collection:operation"
+//   - "database.*:operation"
+// где database/collection/operation — из безопасного набора символов.
+func validatePermission(perm string) error {
+	if perm == "" {
+		return fmt.Errorf("permission cannot be empty")
+	}
+	if !permissionRegex.MatchString(perm) {
+		return fmt.Errorf("invalid permission format: %q", perm)
+	}
+	return nil
+}
+
+// dedupeRoles убирает дубликаты из списка ролей, сохраняя порядок.
+func dedupeRoles(roles []string) []string {
+	if len(roles) == 0 {
+		return []string{}
+	}
+	seen := make(map[string]struct{}, len(roles))
+	out := make([]string, 0, len(roles))
+	for _, r := range roles {
+		if r == "" {
+			continue
+		}
+		if _, ok := seen[r]; ok {
+			continue
+		}
+		seen[r] = struct{}{}
+		out = append(out, r)
+	}
+	return out
+}
+
 // =============================================================================
 // БЛОКИРОВКА АККАУНТА
 // =============================================================================
 
 // isAccountLocked проверяет, заблокирован ли аккаунт.
 // Автоматически снимает блокировку, если срок истёк.
+// ВАЖНО: вызывается под m.mu (read-modify-write), поэтому мутация
+// user здесь безопасна.
 func (m *ACLManager) isAccountLocked(user *User) bool {
 	if user.LockedUntil == 0 {
 		return false
@@ -422,20 +492,23 @@ func (m *ACLManager) CreateUser(username, password string, roles []string) error
 		return err
 	}
 
-	if _, exists := m.users.Load(username); exists {
-		return fmt.Errorf("user %s already exists", username)
-	}
-
 	hash, err := hashPassword(password)
 	if err != nil {
 		return fmt.Errorf("failed to hash password: %w", err)
+	}
+
+	m.mu.Lock()
+	defer m.mu.Unlock()
+
+	if _, exists := m.users.Load(username); exists {
+		return fmt.Errorf("user %s already exists", username)
 	}
 
 	user := &User{
 		ID:           uuid.New().String(),
 		Username:     username,
 		PasswordHash: hash,
-		Roles:        roles,
+		Roles:        dedupeRoles(roles),
 		CreatedAt:    time.Now().UnixMilli(),
 		Active:       true,
 	}
@@ -444,10 +517,17 @@ func (m *ACLManager) CreateUser(username, password string, roles []string) error
 }
 
 // Authenticate аутентифицирует пользователя и создаёт сессию.
+//
+// ИСПРАВЛЕНО: read-modify-write для user.FailedAttempts / LockedUntil /
+// LastLogin выполняется под m.mu — иначе конкурентные попытки входа
+// могли терять инкременты счётчика неудач.
 func (m *ACLManager) Authenticate(username, password string) (string, error) {
 	if err := validateUsername(username); err != nil {
 		return "", fmt.Errorf("invalid credentials")
 	}
+
+	m.mu.Lock()
+	defer m.mu.Unlock()
 
 	val, ok := m.users.Load(username)
 	if !ok {
@@ -456,11 +536,16 @@ func (m *ACLManager) Authenticate(username, password string) (string, error) {
 		return "", fmt.Errorf("invalid credentials")
 	}
 
-	user := val.(*User)
+	// Копируем пользователя, чтобы не мутировать объект, который
+	// могут читать другие горутины.
+	src := val.(*User)
+	user := *src
+	user.Roles = append([]string(nil), src.Roles...)
+
 	if !user.Active {
 		return "", fmt.Errorf("user is disabled")
 	}
-	if m.isAccountLocked(user) {
+	if m.isAccountLocked(&user) {
 		return "", fmt.Errorf("account is temporarily locked")
 	}
 
@@ -483,15 +568,20 @@ func (m *ACLManager) Authenticate(username, password string) (string, error) {
 		if user.FailedAttempts >= maxFailedAttempts {
 			user.LockedUntil = time.Now().Add(lockoutDuration).Unix()
 			user.FailedAttempts = 0
+			m.logWarn(fmt.Sprintf("acl: account %s locked for %s (too many failed logins)",
+				username, lockoutDuration))
 		}
-		m.users.Store(username, user)
+		m.users.Store(username, &user)
 		return "", fmt.Errorf("invalid credentials")
 	}
 
 	user.LastLogin = time.Now().UnixMilli()
 	user.FailedAttempts = 0
 	user.LockedUntil = 0
-	m.users.Store(username, user)
+	m.users.Store(username, &user)
+
+	// Ограничиваем количество активных сессий на пользователя.
+	m.enforceSessionLimitLocked(username)
 
 	sessionID := uuid.New().String()
 	now := time.Now()
@@ -507,6 +597,36 @@ func (m *ACLManager) Authenticate(username, password string) (string, error) {
 	return sessionID, nil
 }
 
+// enforceSessionLimitLocked удаляет старейшие сессии пользователя,
+// если их количество достигло maxSessionsPerUser.
+// Вызывается под m.mu.
+func (m *ACLManager) enforceSessionLimitLocked(username string) {
+	type sess struct {
+		id        string
+		createdAt int64
+	}
+	var userSessions []sess
+	m.sessions.Range(func(key, value interface{}) bool {
+		s := value.(*Session)
+		if s.Username == username {
+			userSessions = append(userSessions, sess{id: s.ID, createdAt: s.CreatedAt})
+		}
+		return true
+	})
+	if len(userSessions) < maxSessionsPerUser {
+		return
+	}
+	// Сортируем по createdAt возрастанию и удаляем самые старые,
+	// чтобы после добавления новой сессии лимит не был превышен.
+	sort.Slice(userSessions, func(i, j int) bool {
+		return userSessions[i].createdAt < userSessions[j].createdAt
+	})
+	toDelete := len(userSessions) - maxSessionsPerUser + 1
+	for i := 0; i < toDelete; i++ {
+		m.sessions.Delete(userSessions[i].id)
+	}
+}
+
 // Logout завершает сессию
 func (m *ACLManager) Logout(sessionID string) {
 	m.sessions.Delete(sessionID)
@@ -515,6 +635,19 @@ func (m *ACLManager) Logout(sessionID string) {
 // CheckSession проверяет, активна ли сессия (с учётом expiry)
 func (m *ACLManager) CheckSession(sessionID string) bool {
 	return m.getSession(sessionID) != nil
+}
+
+// CheckSessionForIP проверяет сессию и совпадение IP клиента.
+// Если у сессии не задан CreatedByIP — проверка IP пропускается.
+func (m *ACLManager) CheckSessionForIP(sessionID, clientIP string) bool {
+	s := m.getSession(sessionID)
+	if s == nil {
+		return false
+	}
+	if s.CreatedByIP != "" && s.CreatedByIP != clientIP {
+		return false
+	}
+	return true
 }
 
 // getSession возвращает валидную сессию или nil.
@@ -576,62 +709,105 @@ func (m *ACLManager) GetUserInfo(username string) (*User, error) {
 	}, nil
 }
 
-// DisableUser отключает пользователя
+// DisableUser отключает пользователя.
+// ИСПРАВЛЕНО: инвалидирует все сессии пользователя.
 func (m *ACLManager) DisableUser(username string) error {
 	if username == "admin" {
 		return fmt.Errorf("cannot disable built-in admin")
 	}
+	m.mu.Lock()
+	defer m.mu.Unlock()
+
 	val, ok := m.users.Load(username)
 	if !ok {
 		return fmt.Errorf("user not found")
 	}
-	user := val.(*User)
+	src := val.(*User)
+	user := *src
 	user.Active = false
-	m.users.Store(username, user)
+	m.users.Store(username, &user)
+
+	// Инвалидируем все сессии
+	m.dropUserSessionsLocked(username)
 	return nil
 }
 
 // EnableUser включает пользователя
 func (m *ACLManager) EnableUser(username string) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+
 	val, ok := m.users.Load(username)
 	if !ok {
 		return fmt.Errorf("user not found")
 	}
-	user := val.(*User)
+	src := val.(*User)
+	user := *src
 	user.Active = true
-	m.users.Store(username, user)
+	m.users.Store(username, &user)
 	return nil
 }
 
-// DeleteUser удаляет пользователя
+// DeleteUser удаляет пользователя.
+// ИСПРАВЛЕНО: инвалидирует все сессии пользователя.
 func (m *ACLManager) DeleteUser(username string) error {
 	if username == "admin" {
 		return fmt.Errorf("cannot delete built-in admin")
 	}
+	m.mu.Lock()
+	defer m.mu.Unlock()
+
 	if _, exists := m.users.LoadAndDelete(username); !exists {
 		return fmt.Errorf("user not found")
 	}
+	m.dropUserSessionsLocked(username)
 	return nil
 }
 
-// ChangePassword изменяет пароль пользователя
+// ChangePassword изменяет пароль пользователя.
+// ИСПРАВЛЕНО: инвалидирует все сессии пользователя (кроме текущей,
+// если нужно, — но проще сбросить все, чтобы гарантировать
+// безопасность при смене пароля администратором).
 func (m *ACLManager) ChangePassword(username, newPassword string) error {
 	if err := validatePassword(newPassword); err != nil {
 		return err
 	}
-	val, ok := m.users.Load(username)
-	if !ok {
-		return fmt.Errorf("user not found")
-	}
-	user := val.(*User)
 	hash, err := hashPassword(newPassword)
 	if err != nil {
 		return err
 	}
+
+	m.mu.Lock()
+	defer m.mu.Unlock()
+
+	val, ok := m.users.Load(username)
+	if !ok {
+		return fmt.Errorf("user not found")
+	}
+	src := val.(*User)
+	user := *src
 	user.PasswordHash = hash
 	user.LegacyPassword = ""
-	m.users.Store(username, user)
+	m.users.Store(username, &user)
+
+	m.dropUserSessionsLocked(username)
 	return nil
+}
+
+// dropUserSessionsLocked удаляет все сессии пользователя.
+// Вызывается под m.mu.
+func (m *ACLManager) dropUserSessionsLocked(username string) {
+	var toDelete []string
+	m.sessions.Range(func(key, value interface{}) bool {
+		s := value.(*Session)
+		if s.Username == username {
+			toDelete = append(toDelete, s.ID)
+		}
+		return true
+	})
+	for _, id := range toDelete {
+		m.sessions.Delete(id)
+	}
 }
 
 // ListUsers возвращает отсортированный список всех пользователей
@@ -654,6 +830,9 @@ func (m *ACLManager) CreateRole(name string) error {
 	if name == "" {
 		return fmt.Errorf("role name cannot be empty")
 	}
+	m.mu.Lock()
+	defer m.mu.Unlock()
+
 	if _, exists := m.roles.Load(name); exists {
 		return fmt.Errorf("role %s already exists", name)
 	}
@@ -662,14 +841,61 @@ func (m *ACLManager) CreateRole(name string) error {
 	return nil
 }
 
-// DeleteRole удаляет роль
+// DeleteRole удаляет роль.
+// ИСПРАВЛЕНО: также удаляет роль у всех пользователей,
+// у которых она была — иначе в сессиях/юзерах остаётся «висячая» роль.
 func (m *ACLManager) DeleteRole(name string) error {
 	if name == "admin" {
 		return fmt.Errorf("cannot delete built-in role 'admin'")
 	}
+	m.mu.Lock()
+	defer m.mu.Unlock()
+
 	if _, exists := m.roles.LoadAndDelete(name); !exists {
 		return fmt.Errorf("role not found")
 	}
+
+	// Убираем роль у всех пользователей
+	m.users.Range(func(key, value interface{}) bool {
+		src := value.(*User)
+		hasRole := false
+		for _, r := range src.Roles {
+			if r == name {
+				hasRole = true
+				break
+			}
+		}
+		if !hasRole {
+			return true
+		}
+		user := *src
+		newRoles := make([]string, 0, len(user.Roles))
+		for _, r := range user.Roles {
+			if r != name {
+				newRoles = append(newRoles, r)
+			}
+		}
+		user.Roles = newRoles
+		m.users.Store(key.(string), &user)
+		return true
+	})
+
+	// И инвалидируем все сессии, у которых была эта роль.
+	var toDelete []string
+	m.sessions.Range(func(key, value interface{}) bool {
+		s := value.(*Session)
+		for _, r := range s.Roles {
+			if r == name {
+				toDelete = append(toDelete, s.ID)
+				break
+			}
+		}
+		return true
+	})
+	for _, id := range toDelete {
+		m.sessions.Delete(id)
+	}
+
 	return nil
 }
 
@@ -694,38 +920,53 @@ func (m *ACLManager) GetRolePermissions(roleName string) ([]string, error) {
 	return append([]string(nil), role.Permissions...), nil
 }
 
-// GrantPermission выдаёт разрешение роли (с дедупликацией)
+// GrantPermission выдаёт разрешение роли (с дедупликацией).
+// ИСПРАВЛЕНО: валидирует формат разрешения и мутирует под m.mu.
 func (m *ACLManager) GrantPermission(roleName, permission string) error {
+	if err := validatePermission(permission); err != nil {
+		return err
+	}
+
+	m.mu.Lock()
+	defer m.mu.Unlock()
+
 	val, ok := m.roles.Load(roleName)
 	if !ok {
 		return fmt.Errorf("role not found")
 	}
-	role := val.(*Role)
+	src := val.(*Role)
+	role := *src
+	role.Permissions = append([]string(nil), src.Permissions...)
+
 	for _, p := range role.Permissions {
 		if p == permission {
 			return nil // уже есть
 		}
 	}
 	role.Permissions = append(role.Permissions, permission)
-	m.roles.Store(roleName, role)
+	m.roles.Store(roleName, &role)
 	return nil
 }
 
-// RevokePermission отзывает разрешение у роли
+// RevokePermission отзывает разрешение у роли.
 func (m *ACLManager) RevokePermission(roleName, permission string) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+
 	val, ok := m.roles.Load(roleName)
 	if !ok {
 		return fmt.Errorf("role not found")
 	}
-	role := val.(*Role)
+	src := val.(*Role)
+	role := *src
 	newPermissions := make([]string, 0, len(role.Permissions))
-	for _, p := range role.Permissions {
+	for _, p := range src.Permissions {
 		if p != permission {
 			newPermissions = append(newPermissions, p)
 		}
 	}
 	role.Permissions = newPermissions
-	m.roles.Store(roleName, role)
+	m.roles.Store(roleName, &role)
 	return nil
 }
 
@@ -733,38 +974,55 @@ func (m *ACLManager) RevokePermission(roleName, permission string) error {
 // РОЛИ ПОЛЬЗОВАТЕЛЯ
 // =============================================================================
 
-// AddUserRole добавляет роль пользователю
+// AddUserRole добавляет роль пользователю.
+// ИСПРАВЛЕНО: мутирует под m.mu; инвалидирует сессии пользователя,
+// чтобы новоприобретённая роль вступила в силу при следующем входе.
 func (m *ACLManager) AddUserRole(username, roleName string) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+
 	val, ok := m.users.Load(username)
 	if !ok {
 		return fmt.Errorf("user not found")
 	}
-	user := val.(*User)
-	for _, r := range user.Roles {
+	src := val.(*User)
+	for _, r := range src.Roles {
 		if r == roleName {
 			return fmt.Errorf("user already has role %s", roleName)
 		}
 	}
-	user.Roles = append(user.Roles, roleName)
-	m.users.Store(username, user)
+	user := *src
+	user.Roles = append(append([]string(nil), src.Roles...), roleName)
+	m.users.Store(username, &user)
+
+	// Инвалидируем сессии пользователя: после смены ролей старые
+	// сессии не должны сохранять прежний набор прав.
+	m.dropUserSessionsLocked(username)
 	return nil
 }
 
-// RemoveUserRole удаляет роль у пользователя
+// RemoveUserRole удаляет роль у пользователя.
+// ИСПРАВЛЕНО: мутирует под m.mu; инвалидирует сессии пользователя.
 func (m *ACLManager) RemoveUserRole(username, roleName string) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+
 	val, ok := m.users.Load(username)
 	if !ok {
 		return fmt.Errorf("user not found")
 	}
-	user := val.(*User)
-	newRoles := make([]string, 0, len(user.Roles))
-	for _, r := range user.Roles {
+	src := val.(*User)
+	newRoles := make([]string, 0, len(src.Roles))
+	for _, r := range src.Roles {
 		if r != roleName {
 			newRoles = append(newRoles, r)
 		}
 	}
+	user := *src
 	user.Roles = newRoles
-	m.users.Store(username, user)
+	m.users.Store(username, &user)
+
+	m.dropUserSessionsLocked(username)
 	return nil
 }
 
@@ -803,11 +1061,21 @@ func (m *ACLManager) CheckPermission(sessionID, database, collection, operation 
 // matchPermission проверяет соответствие одного разрешения запросу.
 //
 // Формат разрешения: "database.collection:operation"
-//   - "*:*"        — полный доступ ко всему (включая admin)
-//   - "db.*:read"  — read всех коллекций в db
+//   - "*:*"           — полный доступ ко всему (включая admin)
+//   - "db.*:read"     — read всех коллекций в db
 //   - "db.coll:admin" — admin-доступ к конкретной коллекции
-//   - "db.coll:*"  — все операции на db.coll
+//   - "db.coll:*"     — все операции на db.coll
+//
+// ИСПРАВЛЕНО: убран мёртвый код с проверкой resource == "*:*".
+// Раньше splitPermission("*:*") давал resource="*", op="*", и первая
+// ветка "if resource == \"*:*\" && op == \"*\"" никогда не срабатывала.
+// Теперь wildcard-разрешение обрабатывается явно, до split.
 func matchPermission(perm, database, collection, operation string) bool {
+	// Полный доступ — единственная форма, где resource содержит ":".
+	if perm == "*:*" {
+		return true
+	}
+
 	parts := splitPermission(perm)
 	if len(parts) != 2 {
 		return false
@@ -815,14 +1083,10 @@ func matchPermission(perm, database, collection, operation string) bool {
 	resource := parts[0]
 	op := parts[1]
 
-	// Полный доступ
-	if resource == "*:*" && op == "*" {
-		return true
-	}
-	// Явный admin-доступ
-	if op == "admin" {
-		if resource == "*:*" {
-			return true
+	// Явный admin-доступ: требуется op == "admin" (или "*").
+	if operation == "admin" {
+		if op != "admin" && op != "*" {
+			return false
 		}
 		resourceParts := splitResource(resource)
 		if len(resourceParts) != 2 {
@@ -832,7 +1096,8 @@ func matchPermission(perm, database, collection, operation string) bool {
 		collMatch := resourceParts[1] == "*" || resourceParts[1] == collection
 		return dbMatch && collMatch
 	}
-	// Обычные операции: op == "*" или совпадает
+
+	// Обычные операции: op == "*" или совпадает с запрошенной.
 	if op != "*" && op != operation {
 		return false
 	}
