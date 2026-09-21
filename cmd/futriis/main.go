@@ -21,10 +21,10 @@
  *   - Проверка allow-list для плагинов перед StartPlugin
  *   - Заменён SIGHUP на SIGUSR1 (reload) + SIGTERM/SIGINT (shutdown)
  *   - Проверка nil для raftCoordinator перед использованием
- *
- * ДОПОЛНИТЕЛЬНО ИСПРАВЛЕНО:
  *   - repl.NewRepl теперь возвращает (*Repl, error)
  *   - Интеграция с Prometheus: /metrics endpoint
+ *   - ДОБАВЛЕНО: поддержка TLS на HTTP API (вариант A — TLS внутри futriiX).
+ *     Теперь используется api.NewHTTPServerWithTLS(..., &cfg.Security).
  */
 
 package main
@@ -233,8 +233,10 @@ func main() {
 	}
 
 	// ========== HTTP API SERVER ==========
+	// ДОБАВЛЕНО: используем NewHTTPServerWithTLS и передаём cfg.Security.
+	// Если в config.toml [security].enable_tls = true, сервер поднимется по HTTPS.
 	httpPort := cfg.API.Port
-	httpServer := api.NewHTTPServer(httpPort, store, raftCoordinator, aclManager, logger)
+	httpServer := api.NewHTTPServerWithTLS(httpPort, store, raftCoordinator, aclManager, logger, &cfg.Security)
 	if metricsCollector != nil {
 		httpServer.SetMetricsCollector(metricsCollector)
 	}
@@ -264,9 +266,13 @@ func main() {
 	if !httpStarted {
 		logger.Warn("HTTP server did not start within timeout, continuing anyway")
 	}
-	logger.Info(fmt.Sprintf("HTTP API server started on port %d", httpPort))
+	scheme := "http"
+	if httpServer.IsTLSEnabled() {
+		scheme = "https"
+	}
+	logger.Info(fmt.Sprintf("HTTP API server started on %s://0.0.0.0:%d", scheme, httpPort))
 	if metricsCollector != nil {
-		logger.Info(fmt.Sprintf("Prometheus metrics available at http://localhost:%d/metrics", httpPort))
+		logger.Info(fmt.Sprintf("Prometheus metrics available at %s://localhost:%d/metrics", scheme, httpPort))
 	}
 
 	if raftCoordinator != nil {
