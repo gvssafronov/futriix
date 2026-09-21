@@ -29,6 +29,22 @@
 //   - ListUsers/ListRoles возвращают отсортированные списки
 //   - Метод Stop() для остановки фоновой очистки сессий
 //   - Защита от nil-указателей в GetUserInfo/GetRolePermissions
+//
+// ИСПРАВЛЕНО (UI):
+//   - Убрана рамка "====" и пустые строки вокруг сообщения о созданном
+//     admin-пользователе. Сразу после сообщения должен идти баннер futriis.
+//   - Текст сообщения окрашивается в #00bfff (Deep Sky Blue), чтобы
+//     совпадать с цветом баннера futriis 3i²(by 02.04.2026).
+//   - Цвет применяется только если stderr — это TTY (защита от попадания
+//     ANSI-кодов в файл лога при перенаправлении).
+//   - Добавлен фолбэк по уровню поддержки терминала:
+//        True Color (COLORTERM=truecolor) -> \033[38;2;0;191;255m
+//        256-цветный (TERM=xterm-256color) -> \033[38;5;39m
+//        базовый ANSI -> \033[96m (bright cyan)
+//     Это обеспечивает корректный цвет и на Linux, и на OpenIndiana
+//     (illumos), где xterm по умолчанию не поддерживает True Color.
+//   - Пакет pkg/utils намеренно НЕ импортируется, чтобы не создавать
+//     потенциальную циклическую зависимость (utils → acl → utils).
 
 package acl
 
@@ -71,6 +87,15 @@ const (
 	// Параметры блокировки аккаунта
 	maxFailedAttempts = 5
 	lockoutDuration   = 15 * time.Minute
+
+	// ANSI-коды для окраски сообщения о созданном admin-пользователе.
+	// Используется точный #00bfff (Deep Sky Blue) с фолбэком на 256-цветный
+	// и базовый ANSI для корректного отображения на OpenIndiana (illumos),
+	// где xterm по умолчанию не поддерживает True Color.
+	ansiDeepSkyBlueRGB = "\033[38;2;0;191;255m" // True Color
+	ansiDeepSkyBlue256 = "\033[38;5;39m"        // Ближайший из xterm-256 палитры
+	ansiDeepSkyBlue16  = "\033[96m"             // Bright Cyan (базовый ANSI)
+	ansiReset          = "\033[0m"
 )
 
 // usernameRegex разрешает только безопасные символы в имени пользователя.
@@ -138,11 +163,64 @@ type ACLManager struct {
 // КОНСТРУКТОР
 // =============================================================================
 
+// isTTY проверяет, является ли файл терминалом.
+// Используется для отключения ANSI-кодов при перенаправлении вывода в файл.
+func isTTY(f *os.File) bool {
+	if f == nil {
+		return false
+	}
+	fi, err := f.Stat()
+	if err != nil {
+		return false
+	}
+	return (fi.Mode() & os.ModeCharDevice) != 0
+}
+
+// pickDeepSkyBlueCode выбирает подходящий ANSI-код для #00bfff в
+// зависимости от возможностей терминала.
+//
+// Логика:
+//   - True Color (COLORTERM=truecolor / 24bit) -> RGB \033[38;2;0;191;255m
+//   - 256-цветный (TERM=...256color)            -> \033[38;5;39m
+//   - иначе                                     -> \033[96m (bright cyan)
+//
+// Это гарантирует, что на OpenIndiana (illumos), где xterm по умолчанию
+// не поддерживает True Color, цвет будет максимально близок к #00bfff
+// без искажений.
+func pickDeepSkyBlueCode() string {
+	colorterm := strings.ToLower(os.Getenv("COLORTERM"))
+	term := strings.ToLower(os.Getenv("TERM"))
+
+	if colorterm == "truecolor" || colorterm == "24bit" {
+		return ansiDeepSkyBlueRGB
+	}
+	if strings.Contains(term, "256color") || strings.Contains(colorterm, "256") {
+		return ansiDeepSkyBlue256
+	}
+	return ansiDeepSkyBlue16
+}
+
+// colorizeACLMessage окрашивает строку в #00bfff (Deep Sky Blue),
+// если stderr является TTY. Если stderr перенаправлен в файл —
+// возвращает строку без ANSI-кодов (чтобы они не попали в лог).
+func colorizeACLMessage(s string) string {
+	if !isTTY(os.Stderr) {
+		return s
+	}
+	return pickDeepSkyBlueCode() + s + ansiReset
+}
+
 // NewACLManager создаёт новый менеджер ACL.
 //
 // Создаёт роль "admin" с полными правами и пользователя "admin"
 // со случайным паролем, который выводится в stderr. Пользователь guest
 // не создаётся — если нужен гостевой доступ, создайте его явно.
+//
+// ИСПРАВЛЕНО (UI): убраны рамка "====" и пустые строки вокруг сообщения
+// о созданном admin-пользователе. Сразу после сообщения идёт баннер futriis
+// (см. displayBanner в cmd/futriis/main.go). Текст окрашивается в #00bfff
+// с фолбэком на 256-цветный/базовый ANSI для корректного отображения
+// в терминалах OpenIndiana. Если stderr перенаправлен в файл — без цвета.
 func NewACLManager() *ACLManager {
 	m := &ACLManager{
 		stopChan: make(chan struct{}),
@@ -178,14 +256,17 @@ func NewACLManager() *ACLManager {
 	}
 	m.users.Store("admin", adminUser)
 
-	// Выводим пароль в stderr (не в лог), чтобы администратор его увидел
-	fmt.Fprintf(os.Stderr, "\n"+
-		"======================================================================\n"+
-		"  ACL: создан пользователь 'admin' со случайным паролем.\n"+
-		"  Пароль: %s\n"+
-		"  Смените пароль после первого входа командой 'acl change-password'!\n"+
-		"======================================================================\n\n",
-		adminPassword)
+	// ИСПРАВЛЕНО (UI): убраны рамка "====" и пустые строки вокруг сообщения.
+	// Сразу после этого блока main.go вызывает displayBanner, который
+	// начинает вывод со строки "futriis 3i²(by 02.04.2026)" (предварённой
+	// одной пустой строкой внутри самого displayBanner).
+	//
+	// Пароль по-прежнему идёт в stderr (не в stdout), чтобы его можно
+	// было отделить от обычного вывода и не логировать.
+        fmt.Fprintln(os.Stderr, colorizeACLMessage(" \n"))
+	fmt.Fprintln(os.Stderr, colorizeACLMessage("  ACL: создан пользователь 'admin' со случайным паролем."))
+	fmt.Fprintln(os.Stderr, colorizeACLMessage(fmt.Sprintf("  Пароль: %s", adminPassword)))
+	fmt.Fprintln(os.Stderr, colorizeACLMessage("  Смените пароль после первого входа командой 'acl change-password'!"))
 
 	// Запускаем фоновую очистку сессий
 	m.wg.Add(1)
