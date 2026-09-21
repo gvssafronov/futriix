@@ -26,11 +26,14 @@
  *   - ДОБАВЛЕНО: поддержка TLS на HTTP API (вариант A — TLS внутри futriiX).
  *     Теперь используется api.NewHTTPServerWithTLS(..., &cfg.Security).
  *   - ИСПРАВЛЕНО (UI): убраны лишние пустые строки перед баннером, чтобы
- *     строка "futriis 3i²(by 22.09.2026)" шла сразу после сообщения ACL
+ *     строка "futriis 3i²(by 02.04.2026)" шла сразу после сообщения ACL
  *     о созданном admin-пользователе.
  *   - ИСПРАВЛЕНО (UI): текст баннера окрашивается в точный #00bfff
  *     (Deep Sky Blue) через utils.PrintlnDeepSkyBlueReset, чтобы совпадать
- *     с цветом надписи "futriis 3i²(by 22.09.2026)".
+ *     с цветом надписи "futriis 3i²(by 02.04.2026)".
+ *   - ИСПРАВЛЕНО: acl.NewACLManager() теперь возвращает (*ACLManager, error).
+ *     Обрабатываем ошибку и завершаемся через os.Exit(1) с логом,
+ *     без panic и stack trace.
  */
 
 package main
@@ -126,7 +129,14 @@ func main() {
 	storage.InitTriggerManager(logger)
 	logger.Info("Trigger manager initialized")
 
-	aclManager := acl.NewACLManager()
+	// ИСПРАВЛЕНО: NewACLManager теперь возвращает (*ACLManager, error).
+	// Обрабатываем ошибку управляемо (без panic) и завершаемся с кодом 1.
+	aclManager, err := acl.NewACLManager()
+	if err != nil {
+		logger.Error("Failed to initialize ACL manager: " + err.Error())
+		utils.PrintError("Failed to initialize ACL manager: " + err.Error())
+		os.Exit(1)
+	}
 	logger.Info("ACL manager initialized")
 
 	raftCoordinator, err := cluster.NewRaftCoordinator(cfg, store, logger)
@@ -293,7 +303,7 @@ func main() {
 	// ИСПРАВЛЕНО (UI): убраны лишние пустые строки перед баннером.
 	// Внутри displayBanner уже есть utils.Println("") первой строкой,
 	// чтобы отделить баннер от ACL-сообщения. Строка "futriis 3i²(by
-	// 22.09.2026)" идёт сразу после сообщения ACL.
+	// 02.04.2026)" идёт сразу после сообщения ACL.
 	displayBanner(cfg.Cluster.Name, httpPort, raftCoordinator, cfg.Saga.Enabled, cfg.Metrics.Enabled)
 
 	replInstance, err := repl.NewRepl(store, raftCoordinator, logger, cfg, aclManager, pluginManager)
@@ -588,7 +598,7 @@ func isPortListening(port int) bool {
 //
 // ИСПРАВЛЕНО (UI): текст баннера окрашивается точным цветом
 // #00bfff (Deep Sky Blue) через utils.PrintlnDeepSkyBlueReset, чтобы
-// совпадать с цветом надписи "futriis 3i²(by 22.09.2026)".
+// совпадать с цветом надписи "futriis 3i²(by 02.04.2026)".
 //
 // Внутри уже есть utils.Println("") первой строкой, чтобы отделить
 // баннер от ACL-сообщения. Дополнительные пустые строки в main() не
@@ -596,7 +606,7 @@ func isPortListening(port int) bool {
 func displayBanner(clusterName string, httpPort int, coordinator *cluster.RaftCoordinator, sagaEnabled, metricsEnabled bool) {
 	utils.Println("")
 	bannerLines := []string{
-		"                futriis 3i²(by 22.09.2026)                 ",
+		"                futriis 3i²(by 02.04.2026)                 ",
 		"                Distributed Document-Store in-memory database with support lua plugins   ",
 		"                Cluster status: enable (Raft consensus)",
 		"                Cluster features: Pipeline Replication, Batch Commit, Dynamic Resharding",
