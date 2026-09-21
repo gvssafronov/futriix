@@ -9,62 +9,55 @@
 #
 
 # ============================================================================
-# CONFIGURATION FILE FOR futriiX DBMS
+# futriiX DBMS CONFIGURATION FILE
 # ============================================================================
-# This file contains all settings for the clustered DBMS futriiX.
+# This file contains all settings for the futriiX clustered DBMS.
 # Format: TOML (Tom's Obvious, Minimal Language)
 # ============================================================================
 
 # ============================================================================
 # [cluster] - CLUSTER SETTINGS
 # ============================================================================
-# Defines the node configuration in a distributed cluster.
-# All nodes must share the same cluster name to communicate.
-# ============================================================================
 [cluster]
     name = "test_cluster"                    # Cluster name (must match on all nodes)
     node_ip = "192.168.0.103"                # Node IP address (0.0.0.0 = all interfaces)
     node_port = 9876                         # Port for inter-node communication
-    raft_port = 9878                         # Port for the Raft consensus protocol
+    raft_port = 9878                         # Port for Raft consensus protocol
     raft_data_dir = "raft_data"              # Directory for Raft data (logs, snapshots)
     bootstrap = true                         # First node in the cluster (initialization only)
     nodes = [                                # List of all cluster nodes
         "192.168.0.103:9878",                # Format: "IP:RaftPort"
     ]
-    
+
     # ---------- Raft timeouts ----------
-    heartbeat_timeout_ms = 1000              # Heartbeat interval from the leader (ms)
+    heartbeat_timeout_ms = 1000              # Leader heartbeat interval (ms)
     election_timeout_ms = 1000               # Timeout before elections start (ms)
     commit_timeout_ms = 500                  # Commit timeout (ms)
-    
+
     # ---------- Snapshot settings ----------
     snapshot_interval_min = 30               # Snapshot creation interval (minutes)
-    snapshot_threshold = 1000                # Number of log entries before a snapshot
-    
+    snapshot_threshold = 1000                # Number of log entries before a snapshot is created
+
     # ---------- Split-brain protection ----------
     split_brain_prevention = true            # Enable split-brain protection
     recovery_timeout_sec = 30                # Recovery timeout (sec)
-    
+
     # ---------- Regional settings ----------
-    region = "default"                       # Node region (for geographic distribution)
+    region = "default"                       # Node region (for geo-distribution)
     priority_zone = 0                        # Priority zone (0-9, lower = higher priority)
 
 # ============================================================================
 # [storage] - STORAGE SETTINGS
-# ============================================================================
-# Defines physical data storage parameters.
 # ============================================================================
 [storage]
     page_size_mb = 64                        # Memory page size (MB)
     max_collections = 100                    # Maximum number of collections per DB
     max_documents_per_collection = 1000000   # Maximum number of documents per collection
     default_engine = "row"                   # Default storage engine
-    enable_custom_engines = true             # Enable support for custom engines
+    enable_custom_engines = true             # Enable custom engine support
 
 # ============================================================================
-# [repl] - REPL SETTINGS (Read-Eval-Print Loop)
-# ============================================================================
-# Settings for the interactive command line for managing the DBMS.
+# [repl] - REPL (Read-Eval-Print Loop) SETTINGS
 # ============================================================================
 [repl]
     prompt_color = "#00bfff"                 # Prompt color (HEX)
@@ -74,8 +67,6 @@
 # ============================================================================
 # [log] - LOGGING SETTINGS
 # ============================================================================
-# Defines where and with what verbosity to store logs.
-# ============================================================================
 [log]
     log_file = "futriix.log"                 # Path to the log file
     log_level = "debug"                      # Level: debug, info, warn, error, fatal
@@ -83,67 +74,64 @@
 # ============================================================================
 # [api] - HTTP API SETTINGS
 # ============================================================================
-# Port for the REST API server.
-# ============================================================================
 [api]
     port = 8080                              # HTTP API port
 
 # ============================================================================
 # [replication] - REPLICATION SETTINGS
 # ============================================================================
-# Controls data replication between cluster nodes.
 # Master-master replication is NOT USED (removed from the architecture).
 # ============================================================================
 [replication]
     enabled = false                          # Enable replication
     sync_replication = false                 # Synchronous replication (waits for ack)
     replication_timeout_ms = 5000            # Replication timeout (ms)
-    max_replica_lag_ms = 5000                # Maximum lag allowed for replica reads
+    max_replica_lag_ms = 5000                # Maximum lag for reading from replicas
 
 # ============================================================================
 # [compression] - COMPRESSION SETTINGS
-# ============================================================================
-# Data compression algorithms and parameters to save space.
 # ============================================================================
 [compression]
     enabled = true                           # Enable data compression
     algorithm = "snappy"                     # Algorithm: snappy, lz4, zstd
     level = 3                                # Compression level (1-9)
-    min_size = 1024                          # Minimum document size to compress (bytes)
+    min_size = 1024                          # Minimum document size for compression (bytes)
 
+# ============================================================================
+# [webui] - WEB INTERFACE SETTINGS
+# ============================================================================
+[webui]
+    enabled = true                           # Enable web interface
+    port = 9080                              # Web interface port
+    theme = "dark"                           # Theme: dark, light
 
 # ============================================================================
 # [performance] - PERFORMANCE SETTINGS
 # ============================================================================
-# System performance optimizations.
-# ============================================================================
 [performance]
-    enable_pipeline = true                   # Pipeline replication (command batching)
-    batch_size = 100                         # Batch size for operations
+    enable_pipeline = true                   # Pipeline replication (batch commands)
+    batch_size = 100                         # Operation batch size
     read_from_follower = true                # Read from replicas (async replication)
     max_connections = 1000                   # Maximum number of connections
-    read_replica_delay_ms = 100              # Maximum lag allowed for replica reads
+    read_replica_delay_ms = 100              # Maximum lag for reading from replicas
 
 # ============================================================================
 # [security] - SECURITY SETTINGS
 # ============================================================================
-# TLS encryption and client authentication.
-#
-# ADDED: this section is used by the futriiX HTTP API (not just the cluster).
+# TLS encryption for the HTTP API.
 # If enable_tls = true and cert_file/key_file are set, the HTTP API will
-# listen over HTTPS on [api].port. If certificates are not provided,
-# futriiX will start over HTTP and log a warning.
+# listen over HTTPS on [api].port. If certificates are not provided, futriiX
+# starts over HTTP and logs a warning.
 # ============================================================================
 [security]
     enable_tls = false                       # Enable TLS for the HTTP API
-    cert_file = ""                           # Path to the certificate (.crt) — e.g. certs/server.crt
-    key_file = ""                            # Path to the key (.key)         — e.g. certs/server.key
+    cert_file = ""                           # Path to certificate (.crt) — e.g. certs/server.crt
+    key_file = ""                            # Path to key (.key)         — e.g. certs/server.key
     ca_file = ""                             # Path to CA (.crt) for mTLS (optional)
     min_version = "1.2"                      # Minimum TLS version: 1.2 or 1.3
+
 # ============================================================================
 # [monitoring] - MONITORING SETTINGS
-# ============================================================================
-# Metrics collection and distributed tracing.
 # ============================================================================
 [monitoring]
     enable_metrics = true                    # Enable Prometheus metrics
@@ -154,19 +142,16 @@
 # ============================================================================
 # [recovery] - RECOVERY SETTINGS
 # ============================================================================
-# Automatic recovery after failures.
-# ============================================================================
 [recovery]
-    auto_rejoin = true                       # Automatic reconnection to the cluster
-    max_retry_sec = 300                      # Maximum retry time (sec)
+    auto_rejoin = true                       # Automatic cluster rejoin
+    max_retry_sec = 300                      # Maximum retry duration (sec)
     data_replication_timeout_sec = 60        # Data replication timeout (sec)
     stale_read_timeout_sec = 30              # Timeout for stale reads (sec)
 
 # ============================================================================
-# [wal] - WAL SETTINGS (Write-Ahead Log)
+# [wal] - WAL (Write-Ahead Log) SETTINGS
 # ============================================================================
-# Write-ahead log to guarantee data integrity.
-# Supports segmentation and asynchronous recovery.
+# Write-ahead log for data integrity. Supports segmentation and async recovery.
 # ============================================================================
 [wal]
     segment_size_mb = 64                     # WAL segment size (MB)
@@ -181,13 +166,13 @@
 # ============================================================================
 # [mvcc] - MVCC SETTINGS
 # ============================================================================
-# Multi-Version Concurrency Control for document versioning.
+# Multi-Version Concurrency Control for document version management.
 # ============================================================================
 [mvcc]
     max_versions_per_doc = 10                # Maximum versions per document (0 = disabled)
     visibility_map_size = 1048576            # Visibility map size (1M)
     prune_interval_min = 5                   # Version cleanup interval (minutes)
-    retention_days = 7                       # Retention of old versions (days)
+    retention_days = 7                       # Days to retain old versions
     read_cache_size = 10000                  # Read cache size
     read_cache_ttl_sec = 300                 # Cache TTL (sec)
 
@@ -207,45 +192,43 @@
 # ============================================================================
 # [saga] - SAGA ORCHESTRATOR SETTINGS
 # ============================================================================
-# Fault-tolerant orchestrator for distributed transactions using the SAGA protocol.
-# Executes long-running transactions with step compensation.
+# Fault-tolerant orchestrator for distributed transactions using the SAGA
+# protocol. Supports long-running transactions with step compensation.
 # ============================================================================
 [saga]
     # Main settings
     enabled = true                                    # Enable the SAGA orchestrator
     coordinator_count = 3                             # Number of coordinators (>= 3 for fault tolerance)
-    state_dir = "saga_states"                         # Directory for storing SAGA states
-    
+    state_dir = "saga_states"                         # Directory for SAGA state storage
+
     # Execution settings
-    max_retries = 5                                   # Maximum retries for a step
-    retry_backoff_ms = 100                            # Base backoff between retries (ms)
+    max_retries = 5                                   # Maximum retries per step
+    retry_backoff_ms = 100                            # Base delay between retries (ms)
     saga_timeout_sec = 300                            # SAGA execution timeout (sec)
-    stuck_check_interval_sec = 10                     # Interval to check stuck SAGAs (sec)
-    
+    stuck_check_interval_sec = 10                     # Interval to check for stuck SAGAs (sec)
+
     # Orchestration settings
     leader_election_interval_sec = 5                  # Leader election interval (sec)
-    recovery_interval_sec = 30                        # Interval to recover unfinished SAGAs (sec)
+    recovery_interval_sec = 30                        # Recovery interval for incomplete SAGAs (sec)
     metrics_interval_sec = 60                         # Metrics collection interval (sec)
-    
-    # Cleanup and cache settings
-    cleanup_period_hours = 24                         # Period to clean up old SAGAs (hours)
+
+    # Cleanup and caching settings
+    cleanup_period_hours = 24                         # Old SAGA cleanup period (hours)
     max_cache_size = 10000                            # Maximum number of states in cache
-    operation_retention_days = 7                      # Retention of completed operations (days)
-    
+    operation_retention_days = 7                      # Retention time for completed operations (days)
+
     # Performance settings
     channel_buffer_size = 10000                       # Channel buffer size
     async_recovery_workers = 4                        # Number of async recovery workers
     async_recovery_timeout_sec = 30                   # Async recovery timeout (sec)
-    
+
     # Disk sync settings
     fsync_enabled = true                              # Force disk synchronization
     fsync_max_retries = 3                             # Number of sync retries
-    fsync_retry_delay_ms = 100                        # Delay between sync retries (ms)
+    fsync_retry_delay_ms = 100                        # Delay between retries (ms)
 
 # ============================================================================
-# [acl] - ACL SETTINGS (Access Control List)
-# ============================================================================
-# User access and role management.
+# [acl] - ACL (Access Control List) SETTINGS
 # ============================================================================
 [acl]
     max_denied_log_size = 10000              # Maximum entries in the denial log
@@ -256,19 +239,19 @@
 # ============================================================================
 # [plugins] - PLUGIN SETTINGS
 # ============================================================================
-# Support for Lua scripts and custom storage engines.
+# Lua script support and custom storage engines.
 # ============================================================================
 [plugins]
     enabled = true                           # Enable plugins
     script_dir = "plugins"                   # Plugins directory
     allow_list = ["print", "math", "string", "table", "engine"]  # Allowed Lua libraries
-    max_lua_states = 100                     # Maximum number of Lua states
-    lua_state_ttl_sec = 600                  # TTL for an unused state (sec)
+    max_lua_states = 100                     # Maximum Lua states
+    lua_state_ttl_sec = 600                  # TTL for unused states (sec)
     max_cpu_time_ms = 100                    # CPU limit per plugin (ms)
     max_memory_mb = 50                       # Memory limit per plugin (MB)
     max_execution_time_sec = 5               # Execution time limit (sec)
     max_instructions = 1000000               # Lua instruction limit
-    hot_reload_interval_sec = 30             # Change check interval (sec)
+    hot_reload_interval_sec = 30             # Change detection interval (sec)
     max_event_log_size = 1000                # Maximum entries in the plugin log
     load_timeout_sec = 10                    # Plugin load timeout (sec)
     engine_plugin_dir = "engines"            # Directory with engine plugins
@@ -276,38 +259,37 @@
 # ============================================================================
 # [engines] - CUSTOM ENGINE SETTINGS
 # ============================================================================
-# Configuration for various storage engines.
-# ============================================================================
 [engines]
     # Built-in row-based engine (always available)
     [engines.row]
         enabled = true
         description = "Row-based storage engine (default)"
-    
+        config = {}
+
     # Columnar engine for analytical workloads
     [engines.columnar]
         enabled = false
         description = "Columnar storage engine for analytics"
         config = { compression = "zstd", block_size = 65536 }
-    
+
     # Document-oriented engine (JSON-like)
     [engines.document]
         enabled = false
         description = "Document-oriented storage engine"
         config = { auto_index = true, max_nesting = 32 }
-    
+
     # Key-Value engine for simple operations
     [engines.kv]
         enabled = false
         description = "Key-Value storage engine"
         config = { ttl_enabled = true, ttl_default_seconds = 86400 }
-    
-    # Time-series engine for time series data
+
+    # Time-series engine
     [engines.ts]
         enabled = false
         description = "Time-series storage engine"
         config = { chunk_interval_seconds = 3600, retention_days = 30 }
-    
+
     # Graph engine for relationships
     [engines.graph]
         enabled = false
@@ -317,12 +299,10 @@
 # ============================================================================
 # [cluster_tls] - TLS FOR INTER-NODE COMMUNICATION
 # ============================================================================
-# Encryption of traffic between cluster nodes.
-# ============================================================================
 [cluster_tls]
     enabled = false                          # Enable TLS for inter-node communication
-    cert_file = "certs/node.crt"             # Path to the node certificate
-    key_file = "certs/node.key"              # Path to the node key
+    cert_file = "certs/node.crt"             # Path to node certificate
+    key_file = "certs/node.key"              # Path to node key
     ca_file = "certs/ca.crt"                 # Path to CA (for mutual authentication)
     min_version = "1.2"                      # Minimum TLS version
     mutual_auth = false                      # Mutual authentication (mTLS)
@@ -332,8 +312,8 @@
 # ============================================================================
 # [backpressure] - BACKPRESSURE SETTINGS
 # ============================================================================
-# System protection against overload.
-# Once thresholds are reached, starts rejecting requests or adding delays.
+# Protection against overload. When thresholds are reached, requests are
+# either rejected or delayed.
 # ============================================================================
 [backpressure]
     enabled = true                           # Enable backpressure
@@ -343,8 +323,8 @@
     connection_threshold = 5000              # Connection count threshold
     check_interval_ms = 1000                 # Check interval (ms)
     low_delay_ms = 100                       # Delay under low load (ms)
-    medium_reject_prob = 30                  # Reject probability under medium load (%%)
-    high_reject_prob = 70                    # Reject probability under high load (%%)
+    medium_reject_prob = 30                  # Rejection probability under medium load (%)
+    high_reject_prob = 70                    # Rejection probability under high load (%)
 
 # ============================================================================
 # [runtime_limits] - RUNTIME LIMITS
@@ -360,7 +340,7 @@
 # ============================================================================
 # [autoscaling] - AUTOSCALING SETTINGS
 # ============================================================================
-# Automatic node addition/removal depending on load.
+# Automatic node addition/removal based on load.
 # ============================================================================
 [autoscaling]
     enabled = false                          # Enable autoscaling
@@ -371,18 +351,18 @@
     scale_up_cooldown_sec = 300              # Cooldown after scale-up (sec)
     scale_down_cooldown_sec = 600            # Cooldown after scale-down (sec)
     evaluation_interval_sec = 30             # Evaluation interval (sec)
-    predictive_enabled = true                # Predictive load scaling
-    max_scale_up_nodes = 3                   # Maximum nodes per single scale-up
-    max_scale_down_nodes = 2                 # Maximum nodes per single scale-down
+    predictive_enabled = true                # Predictive scaling
+    max_scale_up_nodes = 3                   # Maximum nodes per scale-up
+    max_scale_down_nodes = 2                 # Maximum nodes per scale-down
 
 # ============================================================================
 # [schema_migration] - SCHEMA MIGRATION SETTINGS
 # ============================================================================
-# Automatic data schema upgrade on version change.
+# Automatic schema upgrade when the version changes.
 # ============================================================================
 [schema_migration]
     enabled = true                           # Enable migrations
-    migration_dir = "migrations"             # Migrations directory
+    migration_dir = "migrations"             # Directory with migrations
     auto_migrate = true                      # Automatic migration on startup
     target_version = "2.1.0"                 # Target schema version
 
@@ -395,77 +375,82 @@
     enabled = true                           # Enable the backup scheduler
     backup_dir = "backups"                   # Directory for backups
     max_concurrent = 1                       # Maximum concurrent backups
-    compress_enabled = true                  # Backup compression
-    retention_days = 7                       # Backup retention (days)
-    
- # =============================================================================
-# CROSS-DATACENTER MIGRATION CONFIGURATION
-# =============================================================================
+    compress_enabled = true                  # Compress backups
+    retention_days = 7                       # Days to retain backups
+    # Additional fields used by BackupScheduler (see backup_scheduler.go):
+    include_saga_state = true                # Include SAGA state in the backup
+    enable_incremental = true                # Allow incremental backups
 
+# ============================================================================
+# [migration] - CROSS-DATACENTER MIGRATION
+# ============================================================================
 [migration]
     # Enable cross-datacenter migration
     enabled = false
-    
+
     # Migration mode: "manual", "semi_auto", "auto"
     mode = "semi_auto"
-    
+
     # Source datacenter configuration
     [migration.source]
         name = "dc-primary"
         endpoint = "localhost:8080"
         api_key = ""
         timeout_sec = 30
-    
+
     # Target datacenter configuration
     [migration.target]
         name = "dc-secondary"
         endpoint = "localhost:8081"
         api_key = ""
         timeout_sec = 30
-    
+
     # Migration settings
     [migration.settings]
         # Batch size for document transfer
         batch_size = 1000
-        
+
         # Parallel workers
         workers = 4
-        
+
         # Compression algorithm: "snappy", "lz4", "zstd"
         compression = "snappy"
-        
+
         # Resume after interruption
         resume_enabled = true
-        
+
         # Checkpoint interval (seconds)
         checkpoint_interval_sec = 30
-        
+
         # Max retries for failed operations
         max_retries = 3
-        
+
         # Retry backoff (seconds)
         retry_backoff_sec = 5
-        
+
         # Collections to migrate (empty = all)
         collections = []
-        
+
         # Exclude collections
         exclude_collections = []
-    
+
     # Delta sync settings (incremental migration)
     [migration.delta]
         enabled = true
         interval_sec = 60
         max_lag_sec = 300
-    
+
     # Validation settings
     [migration.validation]
         enabled = true
         sample_percent = 10
         max_errors = 100
 
+# ============================================================================
+# [metrics] - METRICS SETTINGS
+# ============================================================================
 [metrics]
-# Enable Prometheus-format metrics export
-enabled = true
-# Metrics collection interval in seconds
-collect_interval_sec = 15
+    # Enable Prometheus-format metrics export
+    enabled = true
+    # Metrics collection interval in seconds
+    collect_interval_sec = 15
