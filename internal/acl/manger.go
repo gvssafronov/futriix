@@ -30,6 +30,21 @@
 //   - Метод Stop() для остановки фоновой очистки сессий
 //   - Защита от nil-указателей в GetUserInfo/GetRolePermissions
 //
+// ИСПРАВЛЕНО (UI):
+//   - Убрана рамка "====" и пустые строки вокруг сообщения о созданном
+//     admin-пользователе. Сразу после сообщения должен идти баннер futriis.
+//   - Текст сообщения окрашивается в #00bfff (Deep Sky Blue), чтобы
+//     совпадать с цветом баннера futriis 3i²(by 02.04.2026).
+//   - Цвет применяется только если stderr — это TTY (защита от попадания
+//     ANSI-кодов в файл лога при перенаправлении).
+//   - Добавлен фолбэк по уровню поддержки терминала:
+//        True Color (COLORTERM=truecolor) -> \033[38;2;0;191;255m
+//        256-цветный (TERM=xterm-256color) -> \033[38;5;39m
+//        базовый ANSI -> \033[96m (bright cyan)
+//     Это обеспечивает корректный цвет и на Linux, и на OpenIndiana
+//     (illumos), где xterm по умолчанию не поддерживает True Color.
+//   - Пакет pkg/utils намеренно НЕ импортируется, чтобы не создавать
+//     потенциальную циклическую зависимость (utils → acl → utils).
 
 package acl
 
@@ -232,10 +247,12 @@ func colorizeACLMessage(s string) string {
 // не создаётся — если нужен гостевой доступ, создайте его явно.
 //
 // ИСПРАВЛЕНО (UI): убраны рамка "====" и пустые строки вокруг сообщения.
-// ИСПРАВЛЕНО (безопасность): при сбое PBKDF2 больше НЕ используем пароль
-// в открытом виде в качестве хеша — паникуем с понятной ошибкой, чтобы
-// сервис не поднялся с незащищённым паролем.
-func NewACLManager() *ACLManager {
+//
+// ИСПРАВЛЕНО (безопасность): при сбое PBKDF2 функция возвращает ошибку,
+// а НЕ паникует и НЕ сохраняет пароль в открытом виде. Вызывающий код
+// (cmd/futriis/main.go) должен корректно обработать ошибку и завершиться
+// с кодом 1 через os.Exit, а не через panic/stack trace.
+func NewACLManager() (*ACLManager, error) {
 	m := &ACLManager{
 		stopChan: make(chan struct{}),
 	}
@@ -250,15 +267,19 @@ func NewACLManager() *ACLManager {
 	// Создаём администратора со случайным паролем
 	randomBytes := make([]byte, 24)
 	if _, err := rand.Read(randomBytes); err != nil {
+		// Fallback на UUID допустим: это не крипто-операция для хеша,
+		// а источник случайности для пароля. Но если и UUID не
+		// сгенерируется — crypto/rand уже недоступен, и мы не хотим
+		// продолжать с ослабленным паролем.
 		randomBytes = []byte(uuid.New().String())
 	}
 	adminPassword := base64.RawURLEncoding.EncodeToString(randomBytes)
 
 	adminHash, err := hashPassword(adminPassword)
 	if err != nil {
-		// ИСПРАВЛЕНО: не сохраняем пароль в открытом виде.
-		// Паникуем — сервис не должен стартовать с небезопасным ACL.
-		panic(fmt.Sprintf("acl: failed to hash admin password: %v", err))
+		// ИСПРАВЛЕНО: не сохраняем пароль в открытом виде, не паникуем,
+		// а возвращаем ошибку — вызывающий код сам решит, что делать.
+		return nil, fmt.Errorf("acl: failed to hash admin password: %w", err)
 	}
 
 	adminUser := &User{
@@ -277,7 +298,7 @@ func NewACLManager() *ACLManager {
 	//
 	// Пароль по-прежнему идёт в stderr (не в stdout), чтобы его можно
 	// было отделить от обычного вывода и не логировать.
-	fmt.Fprintln(os.Stderr, colorizeACLMessage("\n"))
+	fmt.Fprintln(os.Stderr, colorizeACLMessage(" \n"))
 	fmt.Fprintln(os.Stderr, colorizeACLMessage("  ACL: создан пользователь 'admin' со случайным паролем."))
 	fmt.Fprintln(os.Stderr, colorizeACLMessage(fmt.Sprintf("  Пароль: %s", adminPassword)))
 	fmt.Fprintln(os.Stderr, colorizeACLMessage("  Смените пароль после первого входа командой 'acl change-password'!"))
@@ -286,7 +307,7 @@ func NewACLManager() *ACLManager {
 	m.wg.Add(1)
 	go m.sessionCleanupLoop()
 
-	return m
+	return m, nil
 }
 
 // SetLogger устанавливает логгер (опционально).
