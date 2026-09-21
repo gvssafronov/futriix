@@ -1365,6 +1365,21 @@ After `futriiX` starts, the following endpoints are available:
 | `GET /-/healthy` | Liveness probe. Always `200 OK` if the process is alive. |
 | `GET /api/metrics` | JSON snapshot (rate limiter, storage, cluster). Handy for Grafana JSON API / Infinity datasource. |
 
+> [!TIP]
+> **A note on `metrics_port`**
+> In the current version of futriiX, the `[monitoring].metrics_port` parameter is reserved and not used.
+> The `/metrics` endpoint is served on `[api].port` (default `8080`).
+> That is the address you should put into Prometheus `scrape_configs` and the Grafana datasource.
+> The current contract is "one port for both API and metrics".
+
+```yaml
+scrape_configs:
+  - job_name: futriis
+    static_configs:
+      - targets: ['futriis-host:8080']   # [api].port, not metrics_port
+```
+
+
 ### Exposed metrics
 
 **Process:**
