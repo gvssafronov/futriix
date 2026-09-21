@@ -9,394 +9,394 @@
 #
 
 # ============================================================================
-# КОНФИГУРАЦИОННЫЙ ФАЙЛ СУБД futriiX
+# CONFIGURATION FILE FOR futriiX DBMS
 # ============================================================================
-# Данный файл содержит все настройки для работы кластерной СУБД futriiX.
-# Формат: TOML (Tom's Obvious, Minimal Language)
+# This file contains all settings for the clustered DBMS futriiX.
+# Format: TOML (Tom's Obvious, Minimal Language)
 # ============================================================================
 
 # ============================================================================
-# [cluster] - НАСТРОЙКИ КЛАСТЕРА
+# [cluster] - CLUSTER SETTINGS
 # ============================================================================
-# Определяет конфигурацию узла в распределённом кластере.
-# Все узлы должны иметь одинаковое имя кластера для взаимодействия.
+# Defines the node configuration in a distributed cluster.
+# All nodes must share the same cluster name to communicate.
 # ============================================================================
 [cluster]
-    name = "test_cluster"                    # Имя кластера (должно совпадать на всех узлах)
-    node_ip = "192.168.0.103"                # IP-адрес узла (0.0.0.0 - все интерфейсы)
-    node_port = 9876                         # Порт для коммуникации между узлами
-    raft_port = 9878                         # Порт для Raft консенсус-протокола
-    raft_data_dir = "raft_data"              # Директория для данных Raft (логи, снапшоты)
-    bootstrap = true                         # Первый узел в кластере (только для инициализации)
-    nodes = [                                # Список всех узлов кластера
-        "192.168.0.103:9878",                # Формат: "IP:RaftPort"
+    name = "test_cluster"                    # Cluster name (must match on all nodes)
+    node_ip = "192.168.0.103"                # Node IP address (0.0.0.0 = all interfaces)
+    node_port = 9876                         # Port for inter-node communication
+    raft_port = 9878                         # Port for the Raft consensus protocol
+    raft_data_dir = "raft_data"              # Directory for Raft data (logs, snapshots)
+    bootstrap = true                         # First node in the cluster (initialization only)
+    nodes = [                                # List of all cluster nodes
+        "192.168.0.103:9878",                # Format: "IP:RaftPort"
     ]
     
-    # ---------- Таймауты Raft ----------
-    heartbeat_timeout_ms = 1000              # Интервал heartbeat от лидера (мс)
-    election_timeout_ms = 1000               # Таймаут до начала выборов (мс)
-    commit_timeout_ms = 500                  # Таймаут коммита (мс)
+    # ---------- Raft timeouts ----------
+    heartbeat_timeout_ms = 1000              # Heartbeat interval from the leader (ms)
+    election_timeout_ms = 1000               # Timeout before elections start (ms)
+    commit_timeout_ms = 500                  # Commit timeout (ms)
     
-    # ---------- Snapshot настройки ----------
-    snapshot_interval_min = 30               # Интервал создания снапшотов (минут)
-    snapshot_threshold = 1000                # Количество логов до создания снапшота
+    # ---------- Snapshot settings ----------
+    snapshot_interval_min = 30               # Snapshot creation interval (minutes)
+    snapshot_threshold = 1000                # Number of log entries before a snapshot
     
-    # ---------- Split-brain защита ----------
-    split_brain_prevention = true            # Включить защиту от split-brain
-    recovery_timeout_sec = 30                # Таймаут восстановления (сек)
+    # ---------- Split-brain protection ----------
+    split_brain_prevention = true            # Enable split-brain protection
+    recovery_timeout_sec = 30                # Recovery timeout (sec)
     
-    # ---------- Региональные настройки ----------
-    region = "default"                       # Регион узла (для географического распределения)
-    priority_zone = 0                        # Приоритетная зона (0-9, меньше = выше приоритет)
+    # ---------- Regional settings ----------
+    region = "default"                       # Node region (for geographic distribution)
+    priority_zone = 0                        # Priority zone (0-9, lower = higher priority)
 
 # ============================================================================
-# [storage] - НАСТРОЙКИ ХРАНИЛИЩА
+# [storage] - STORAGE SETTINGS
 # ============================================================================
-# Определяет параметры физического хранения данных.
+# Defines physical data storage parameters.
 # ============================================================================
 [storage]
-    page_size_mb = 64                        # Размер страницы памяти (МБ)
-    max_collections = 100                    # Максимальное количество коллекций в БД
-    max_documents_per_collection = 1000000   # Максимум документов в коллекции
-    default_engine = "row"                   # Движок хранения по умолчанию
-    enable_custom_engines = true             # Включить поддержку кастомных движков
+    page_size_mb = 64                        # Memory page size (MB)
+    max_collections = 100                    # Maximum number of collections per DB
+    max_documents_per_collection = 1000000   # Maximum number of documents per collection
+    default_engine = "row"                   # Default storage engine
+    enable_custom_engines = true             # Enable support for custom engines
 
 # ============================================================================
-# [repl] - НАСТРОЙКИ REPL (Read-Eval-Print Loop)
+# [repl] - REPL SETTINGS (Read-Eval-Print Loop)
 # ============================================================================
-# Настройки интерактивной командной строки для управления СУБД.
+# Settings for the interactive command line for managing the DBMS.
 # ============================================================================
 [repl]
-    prompt_color = "#00bfff"                 # Цвет приглашения (HEX)
-    history_size = 1000                      # Размер истории команд
-    migration_commands = true    # Enable migration commands in REPL
+    prompt_color = "#00bfff"                 # Prompt color (HEX)
+    history_size = 1000                      # Command history size
+    migration_commands = true                # Enable migration commands in REPL
 
 # ============================================================================
-# [log] - НАСТРОЙКИ ЛОГИРОВАНИЯ
+# [log] - LOGGING SETTINGS
 # ============================================================================
-# Определяет, куда и с какой детализацией сохранять логи.
+# Defines where and with what verbosity to store logs.
 # ============================================================================
 [log]
-    log_file = "futriix.log"                 # Путь к файлу логов
-    log_level = "debug"                      # Уровень: debug, info, warn, error, fatal
+    log_file = "futriix.log"                 # Path to the log file
+    log_level = "debug"                      # Level: debug, info, warn, error, fatal
 
 # ============================================================================
-# [api] - НАСТРОЙКИ HTTP API
+# [api] - HTTP API SETTINGS
 # ============================================================================
-# Порт для REST API сервера.
+# Port for the REST API server.
 # ============================================================================
 [api]
-    port = 8080                              # Порт HTTP API
+    port = 8080                              # HTTP API port
 
 # ============================================================================
-# [replication] - НАСТРОЙКИ РЕПЛИКАЦИИ
+# [replication] - REPLICATION SETTINGS
 # ============================================================================
-# Управляет репликацией данных между узлами кластера.
-# Мастер-мастер репликация НЕ ИСПОЛЬЗУЕТСЯ (удалена из архитектуры).
+# Controls data replication between cluster nodes.
+# Master-master replication is NOT USED (removed from the architecture).
 # ============================================================================
 [replication]
-    enabled = false                          # Включить репликацию
-    sync_replication = false                 # Синхронная репликация (ждёт подтверждения)
-    replication_timeout_ms = 5000            # Таймаут репликации (мс)
-    max_replica_lag_ms = 5000                # Максимальная задержка для чтения с реплик
+    enabled = false                          # Enable replication
+    sync_replication = false                 # Synchronous replication (waits for ack)
+    replication_timeout_ms = 5000            # Replication timeout (ms)
+    max_replica_lag_ms = 5000                # Maximum lag allowed for replica reads
 
 # ============================================================================
-# [compression] - НАСТРОЙКИ СЖАТИЯ
+# [compression] - COMPRESSION SETTINGS
 # ============================================================================
-# Алгоритмы и параметры сжатия данных для экономии места.
+# Data compression algorithms and parameters to save space.
 # ============================================================================
 [compression]
-    enabled = true                           # Включить сжатие данных
-    algorithm = "snappy"                     # Алгоритм: snappy, lz4, zstd
-    level = 3                                # Уровень сжатия (1-9)
-    min_size = 1024                          # Минимальный размер документа для сжатия (байт)
+    enabled = true                           # Enable data compression
+    algorithm = "snappy"                     # Algorithm: snappy, lz4, zstd
+    level = 3                                # Compression level (1-9)
+    min_size = 1024                          # Minimum document size to compress (bytes)
 
 
 # ============================================================================
-# [performance] - НАСТРОЙКИ ПРОИЗВОДИТЕЛЬНОСТИ
+# [performance] - PERFORMANCE SETTINGS
 # ============================================================================
-# Оптимизация производительности системы.
+# System performance optimizations.
 # ============================================================================
 [performance]
-    enable_pipeline = true                   # Pipeline репликация (группировка команд)
-    batch_size = 100                         # Размер батча операций
-    read_from_follower = true                # Чтение из реплик (асинхронная репликация)
-    max_connections = 1000                   # Максимум соединений
-    read_replica_delay_ms = 100              # Максимальная задержка для чтения с реплик
+    enable_pipeline = true                   # Pipeline replication (command batching)
+    batch_size = 100                         # Batch size for operations
+    read_from_follower = true                # Read from replicas (async replication)
+    max_connections = 1000                   # Maximum number of connections
+    read_replica_delay_ms = 100              # Maximum lag allowed for replica reads
 
 # ============================================================================
-# [security] - НАСТРОЙКИ БЕЗОПАСНОСТИ
+# [security] - SECURITY SETTINGS
 # ============================================================================
-# TLS шифрование и аутентификация клиентов.
+# TLS encryption and client authentication.
 #
-# ДОБАВЛЕНО: секция используется HTTP API futriiX (не только кластером).
-# Если enable_tls = true и заполнены cert_file/key_file, HTTP API будет
-# слушать HTTPS на порту [api].port. Если сертификаты не заданы —
-# futriiX поднимется по HTTP и запишет в лог предупреждение.
+# ADDED: this section is used by the futriiX HTTP API (not just the cluster).
+# If enable_tls = true and cert_file/key_file are set, the HTTP API will
+# listen over HTTPS on [api].port. If certificates are not provided,
+# futriiX will start over HTTP and log a warning.
 # ============================================================================
 [security]
-    enable_tls = false                       # Включить TLS для HTTP API
-    cert_file = ""                           # Путь к сертификату (.crt) — напр. certs/server.crt
-    key_file = ""                            # Путь к ключу (.key)       — напр. certs/server.key
-    ca_file = ""                             # Путь к CA (.crt) для mTLS (опционально)
-    min_version = "1.2"                      # Минимальная версия TLS: 1.2 или 1.3
+    enable_tls = false                       # Enable TLS for the HTTP API
+    cert_file = ""                           # Path to the certificate (.crt) — e.g. certs/server.crt
+    key_file = ""                            # Path to the key (.key)         — e.g. certs/server.key
+    ca_file = ""                             # Path to CA (.crt) for mTLS (optional)
+    min_version = "1.2"                      # Minimum TLS version: 1.2 or 1.3
 # ============================================================================
-# [monitoring] - НАСТРОЙКИ МОНИТОРИНГА
+# [monitoring] - MONITORING SETTINGS
 # ============================================================================
-# Сбор метрик и распределённый трейсинг.
+# Metrics collection and distributed tracing.
 # ============================================================================
 [monitoring]
-    enable_metrics = true                    # Включить Prometheus метрики
-    metrics_port = 9090                      # Порт для метрик
-    enable_tracing = false                   # Включить распределённый трейсинг
-    trace_sample_rate = 0.01                 # Частота сэмплирования (0-1)
+    enable_metrics = true                    # Enable Prometheus metrics
+    metrics_port = 9090                      # Metrics port
+    enable_tracing = false                   # Enable distributed tracing
+    trace_sample_rate = 0.01                 # Sampling rate (0-1)
 
 # ============================================================================
-# [recovery] - НАСТРОЙКИ ВОССТАНОВЛЕНИЯ
+# [recovery] - RECOVERY SETTINGS
 # ============================================================================
-# Автоматическое восстановление после сбоев.
+# Automatic recovery after failures.
 # ============================================================================
 [recovery]
-    auto_rejoin = true                       # Автоматическое переподключение к кластеру
-    max_retry_sec = 300                      # Максимальное время повторов (сек)
-    data_replication_timeout_sec = 60        # Таймаут репликации данных (сек)
-    stale_read_timeout_sec = 30              # Таймаут для устаревших чтений (сек)
+    auto_rejoin = true                       # Automatic reconnection to the cluster
+    max_retry_sec = 300                      # Maximum retry time (sec)
+    data_replication_timeout_sec = 60        # Data replication timeout (sec)
+    stale_read_timeout_sec = 30              # Timeout for stale reads (sec)
 
 # ============================================================================
-# [wal] - НАСТРОЙКИ WAL (Write-Ahead Log)
+# [wal] - WAL SETTINGS (Write-Ahead Log)
 # ============================================================================
-# Журнал предзаписи для обеспечения целостности данных.
-# Поддерживает сегментирование и асинхронное восстановление.
+# Write-ahead log to guarantee data integrity.
+# Supports segmentation and asynchronous recovery.
 # ============================================================================
 [wal]
-    segment_size_mb = 64                     # Размер сегмента WAL (МБ)
-    sync_interval_sec = 5                    # Интервал синхронизации с диском (сек)
-    batch_size = 100                         # Размер пакета записи
-    recovery_workers = 4                     # Количество воркеров для восстановления
-    enabled = true                           # Включить WAL
-    async_recovery = true                    # Асинхронное восстановление
-    async_recovery_workers = 4               # Количество воркеров для асинхронного восстановления
-    async_recovery_buffer = 10000            # Размер буфера для асинхронного восстановления
+    segment_size_mb = 64                     # WAL segment size (MB)
+    sync_interval_sec = 5                    # Disk sync interval (sec)
+    batch_size = 100                         # Write batch size
+    recovery_workers = 4                     # Number of recovery workers
+    enabled = true                           # Enable WAL
+    async_recovery = true                    # Asynchronous recovery
+    async_recovery_workers = 4               # Number of async recovery workers
+    async_recovery_buffer = 10000            # Async recovery buffer size
 
 # ============================================================================
-# [mvcc] - НАСТРОЙКИ MVCC
+# [mvcc] - MVCC SETTINGS
 # ============================================================================
-# Multi-Version Concurrency Control для управления версиями документов.
+# Multi-Version Concurrency Control for document versioning.
 # ============================================================================
 [mvcc]
-    max_versions_per_doc = 10                # Максимум версий документа (0 = отключено)
-    visibility_map_size = 1048576            # Размер карты видимости (1M)
-    prune_interval_min = 5                   # Интервал очистки версий (минут)
-    retention_days = 7                       # Дни хранения старых версий
-    read_cache_size = 10000                  # Размер кэша чтения
-    read_cache_ttl_sec = 300                 # TTL кэша (сек)
+    max_versions_per_doc = 10                # Maximum versions per document (0 = disabled)
+    visibility_map_size = 1048576            # Visibility map size (1M)
+    prune_interval_min = 5                   # Version cleanup interval (minutes)
+    retention_days = 7                       # Retention of old versions (days)
+    read_cache_size = 10000                  # Read cache size
+    read_cache_ttl_sec = 300                 # Cache TTL (sec)
 
 # ============================================================================
-# [transactions] - НАСТРОЙКИ ТРАНЗАКЦИЙ
+# [transactions] - TRANSACTION SETTINGS
 # ============================================================================
-# Управление транзакциями с поддержкой Saga и TCC.
-# 2PC (Two-Phase Commit) НЕ ИСПОЛЬЗУЕТСЯ (удалён из архитектуры).
+# Transaction management with Saga and TCC support.
+# 2PC (Two-Phase Commit) is NOT USED (removed from the architecture).
 # ============================================================================
 [transactions]
-    default_timeout_sec = 30                 # Таймаут транзакции по умолчанию (сек)
-    deadlock_check_interval_sec = 1          # Интервал проверки дедлоков (сек)
-    max_savepoints_per_tx = 100              # Максимум точек сохранения в транзакции
-    enabled = true                           # Включить поддержку транзакций
-    checkpoint_interval_sec = 300            # Интервал чекпоинтов (сек)
+    default_timeout_sec = 30                 # Default transaction timeout (sec)
+    deadlock_check_interval_sec = 1          # Deadlock check interval (sec)
+    max_savepoints_per_tx = 100              # Maximum savepoints per transaction
+    enabled = true                           # Enable transaction support
+    checkpoint_interval_sec = 300            # Checkpoint interval (sec)
 
 # ============================================================================
-# [saga] - НАСТРОЙКИ SAGA ОРКЕСТРАТОРА
+# [saga] - SAGA ORCHESTRATOR SETTINGS
 # ============================================================================
-# Отказоустойчивый оркестратор распределённых транзакций по протоколу SAGA.
-# Обеспечивает выполнение длительных транзакций с компенсацией шагов.
+# Fault-tolerant orchestrator for distributed transactions using the SAGA protocol.
+# Executes long-running transactions with step compensation.
 # ============================================================================
 [saga]
-    # Основные настройки
-    enabled = true                                    # Включить SAGA оркестратор
-    coordinator_count = 3                             # Количество координаторов (>= 3 для отказоустойчивости)
-    state_dir = "saga_states"                         # Директория для хранения состояний SAGA
+    # Main settings
+    enabled = true                                    # Enable the SAGA orchestrator
+    coordinator_count = 3                             # Number of coordinators (>= 3 for fault tolerance)
+    state_dir = "saga_states"                         # Directory for storing SAGA states
     
-    # Настройки выполнения
-    max_retries = 5                                   # Максимальное количество попыток выполнения шага
-    retry_backoff_ms = 100                            # Базовая задержка между повторными попытками (мс)
-    saga_timeout_sec = 300                            # Таймаут выполнения SAGA (сек)
-    stuck_check_interval_sec = 10                     # Интервал проверки зависших SAGA (сек)
+    # Execution settings
+    max_retries = 5                                   # Maximum retries for a step
+    retry_backoff_ms = 100                            # Base backoff between retries (ms)
+    saga_timeout_sec = 300                            # SAGA execution timeout (sec)
+    stuck_check_interval_sec = 10                     # Interval to check stuck SAGAs (sec)
     
-    # Настройки оркестрации
-    leader_election_interval_sec = 5                  # Интервал выбора лидера (сек)
-    recovery_interval_sec = 30                        # Интервал восстановления незавершённых SAGA (сек)
-    metrics_interval_sec = 60                         # Интервал сбора метрик (сек)
+    # Orchestration settings
+    leader_election_interval_sec = 5                  # Leader election interval (sec)
+    recovery_interval_sec = 30                        # Interval to recover unfinished SAGAs (sec)
+    metrics_interval_sec = 60                         # Metrics collection interval (sec)
     
-    # Настройки очистки и кэширования
-    cleanup_period_hours = 24                         # Период очистки старых SAGA (часы)
-    max_cache_size = 10000                            # Максимальное количество состояний в кэше
-    operation_retention_days = 7                      # Время жизни выполненных операций (дни)
+    # Cleanup and cache settings
+    cleanup_period_hours = 24                         # Period to clean up old SAGAs (hours)
+    max_cache_size = 10000                            # Maximum number of states in cache
+    operation_retention_days = 7                      # Retention of completed operations (days)
     
-    # Настройки производительности
-    channel_buffer_size = 10000                       # Размер буфера каналов
-    async_recovery_workers = 4                        # Количество воркеров для асинхронного восстановления
-    async_recovery_timeout_sec = 30                   # Таймаут асинхронного восстановления (сек)
+    # Performance settings
+    channel_buffer_size = 10000                       # Channel buffer size
+    async_recovery_workers = 4                        # Number of async recovery workers
+    async_recovery_timeout_sec = 30                   # Async recovery timeout (sec)
     
-    # Настройки синхронизации с диском
-    fsync_enabled = true                              # Принудительная синхронизация с диском
-    fsync_max_retries = 3                             # Количество повторных попыток синхронизации
-    fsync_retry_delay_ms = 100                        # Задержка между повторными попытками (мс)
+    # Disk sync settings
+    fsync_enabled = true                              # Force disk synchronization
+    fsync_max_retries = 3                             # Number of sync retries
+    fsync_retry_delay_ms = 100                        # Delay between sync retries (ms)
 
 # ============================================================================
-# [acl] - НАСТРОЙКИ ACL (Access Control List)
+# [acl] - ACL SETTINGS (Access Control List)
 # ============================================================================
-# Управление доступом и ролями пользователей.
+# User access and role management.
 # ============================================================================
 [acl]
-    max_denied_log_size = 10000              # Максимум записей в логе отказов
-    temporary_grant_ttl_hours = 24           # TTL временных разрешений (часы)
-    enable_role_hierarchy = true             # Включить иерархию ролей
-    cache_ttl_sec = 60                       # TTL кэша ACL (сек)
+    max_denied_log_size = 10000              # Maximum entries in the denial log
+    temporary_grant_ttl_hours = 24           # TTL for temporary grants (hours)
+    enable_role_hierarchy = true             # Enable role hierarchy
+    cache_ttl_sec = 60                       # ACL cache TTL (sec)
 
 # ============================================================================
-# [plugins] - НАСТРОЙКИ ПЛАГИНОВ
+# [plugins] - PLUGIN SETTINGS
 # ============================================================================
-# Поддержка Lua скриптов и кастомных движков хранения.
+# Support for Lua scripts and custom storage engines.
 # ============================================================================
 [plugins]
-    enabled = true                           # Включить плагины
-    script_dir = "plugins"                   # Директория плагинов
-    allow_list = ["print", "math", "string", "table", "engine"]  # Разрешённые Lua-библиотеки
-    max_lua_states = 100                     # Максимум Lua-состояний
-    lua_state_ttl_sec = 600                  # TTL неиспользуемого состояния (сек)
-    max_cpu_time_ms = 100                    # Лимит CPU на плагин (мс)
-    max_memory_mb = 50                       # Лимит памяти на плагин (МБ)
-    max_execution_time_sec = 5               # Лимит времени выполнения (сек)
-    max_instructions = 1000000               # Лимит инструкций Lua
-    hot_reload_interval_sec = 30             # Интервал проверки изменений (сек)
-    max_event_log_size = 1000                # Максимум записей в логе плагина
-    load_timeout_sec = 10                    # Таймаут загрузки плагина (сек)
-    engine_plugin_dir = "engines"            # Директория с движками-плагинами
+    enabled = true                           # Enable plugins
+    script_dir = "plugins"                   # Plugins directory
+    allow_list = ["print", "math", "string", "table", "engine"]  # Allowed Lua libraries
+    max_lua_states = 100                     # Maximum number of Lua states
+    lua_state_ttl_sec = 600                  # TTL for an unused state (sec)
+    max_cpu_time_ms = 100                    # CPU limit per plugin (ms)
+    max_memory_mb = 50                       # Memory limit per plugin (MB)
+    max_execution_time_sec = 5               # Execution time limit (sec)
+    max_instructions = 1000000               # Lua instruction limit
+    hot_reload_interval_sec = 30             # Change check interval (sec)
+    max_event_log_size = 1000                # Maximum entries in the plugin log
+    load_timeout_sec = 10                    # Plugin load timeout (sec)
+    engine_plugin_dir = "engines"            # Directory with engine plugins
 
 # ============================================================================
-# [engines] - НАСТРОЙКИ КАСТОМНЫХ ДВИЖКОВ
+# [engines] - CUSTOM ENGINE SETTINGS
 # ============================================================================
-# Конфигурация различных движков хранения данных.
+# Configuration for various storage engines.
 # ============================================================================
 [engines]
-    # Встроенный row-based движок (всегда доступен)
+    # Built-in row-based engine (always available)
     [engines.row]
         enabled = true
         description = "Row-based storage engine (default)"
     
-    # Колоночный движок для аналитических нагрузок
+    # Columnar engine for analytical workloads
     [engines.columnar]
         enabled = false
         description = "Columnar storage engine for analytics"
         config = { compression = "zstd", block_size = 65536 }
     
-    # Document-ориентированный движок (JSON-подобный)
+    # Document-oriented engine (JSON-like)
     [engines.document]
         enabled = false
         description = "Document-oriented storage engine"
         config = { auto_index = true, max_nesting = 32 }
     
-    # Key-Value движок для простых операций
+    # Key-Value engine for simple operations
     [engines.kv]
         enabled = false
         description = "Key-Value storage engine"
         config = { ttl_enabled = true, ttl_default_seconds = 86400 }
     
-    # Time-series движок для временных рядов
+    # Time-series engine for time series data
     [engines.ts]
         enabled = false
         description = "Time-series storage engine"
         config = { chunk_interval_seconds = 3600, retention_days = 30 }
     
-    # Графовый движок для связей
+    # Graph engine for relationships
     [engines.graph]
         enabled = false
         description = "Graph storage engine"
         config = { vertex_label = "node", edge_label = "relationship" }
 
 # ============================================================================
-# [cluster_tls] - TLS ДЛЯ МЕЖУЗЛОВОГО ОБЩЕНИЯ
+# [cluster_tls] - TLS FOR INTER-NODE COMMUNICATION
 # ============================================================================
-# Шифрование трафика между узлами кластера.
+# Encryption of traffic between cluster nodes.
 # ============================================================================
 [cluster_tls]
-    enabled = false                          # Включить TLS для межузлового общения
-    cert_file = "certs/node.crt"             # Путь к сертификату узла
-    key_file = "certs/node.key"              # Путь к ключу узла
-    ca_file = "certs/ca.crt"                 # Путь к CA (для взаимной аутентификации)
-    min_version = "1.2"                      # Минимальная версия TLS
-    mutual_auth = false                      # Взаимная аутентификация (mTLS)
-    key_rotation_days = 30                   # Дни до ротации ключей
-    auto_generate = false                    # Автогенерация сертификатов при отсутствии
+    enabled = false                          # Enable TLS for inter-node communication
+    cert_file = "certs/node.crt"             # Path to the node certificate
+    key_file = "certs/node.key"              # Path to the node key
+    ca_file = "certs/ca.crt"                 # Path to CA (for mutual authentication)
+    min_version = "1.2"                      # Minimum TLS version
+    mutual_auth = false                      # Mutual authentication (mTLS)
+    key_rotation_days = 30                   # Days until key rotation
+    auto_generate = false                    # Auto-generate certificates if missing
 
 # ============================================================================
-# [backpressure] - НАСТРОЙКИ BACKPRESSURE
+# [backpressure] - BACKPRESSURE SETTINGS
 # ============================================================================
-# Защита системы от перегрузки.
-# При достижении порогов начинает отклонять запросы или добавлять задержки.
+# System protection against overload.
+# Once thresholds are reached, starts rejecting requests or adding delays.
 # ============================================================================
 [backpressure]
-    enabled = true                           # Включить backpressure
-    cpu_threshold = 0.80                     # Порог CPU для срабатывания (0-1)
-    memory_threshold = 0.85                  # Порог памяти для срабатывания (0-1)
-    queue_size_threshold = 10000             # Порог размера очереди
-    connection_threshold = 5000              # Порог количества соединений
-    check_interval_ms = 1000                 # Интервал проверки (мс)
-    low_delay_ms = 100                       # Задержка при низкой нагрузке (мс)
-    medium_reject_prob = 30                  # Вероятность отклонения при средней (%%)
-    high_reject_prob = 70                    # Вероятность отклонения при высокой (%%)
+    enabled = true                           # Enable backpressure
+    cpu_threshold = 0.80                     # CPU threshold to trigger (0-1)
+    memory_threshold = 0.85                  # Memory threshold to trigger (0-1)
+    queue_size_threshold = 10000             # Queue size threshold
+    connection_threshold = 5000              # Connection count threshold
+    check_interval_ms = 1000                 # Check interval (ms)
+    low_delay_ms = 100                       # Delay under low load (ms)
+    medium_reject_prob = 30                  # Reject probability under medium load (%%)
+    high_reject_prob = 70                    # Reject probability under high load (%%)
 
 # ============================================================================
-# [runtime_limits] - ОГРАНИЧЕНИЯ НА УРОВНЕ ВЫПОЛНЕНИЯ
+# [runtime_limits] - RUNTIME LIMITS
 # ============================================================================
-# Жёсткие ограничения на размеры документов и коллекций.
+# Hard limits on document and collection sizes.
 # ============================================================================
 [runtime_limits]
-    enabled = true                           # Включить ограничения
-    global_max_doc_size_mb = 16              # Макс. размер документа (МБ)
-    global_max_coll_size_mb = 10240          # Макс. размер коллекции (МБ) (10 GB)
-    global_max_docs_per_coll = 10000000      # Макс. документов в коллекции
+    enabled = true                           # Enable limits
+    global_max_doc_size_mb = 16              # Maximum document size (MB)
+    global_max_coll_size_mb = 10240          # Maximum collection size (MB) (10 GB)
+    global_max_docs_per_coll = 10000000      # Maximum documents per collection
 
 # ============================================================================
-# [autoscaling] - НАСТРОЙКИ АВТОМАСШТАБИРОВАНИЯ
+# [autoscaling] - AUTOSCALING SETTINGS
 # ============================================================================
-# Автоматическое добавление/удаление узлов в зависимости от нагрузки.
+# Automatic node addition/removal depending on load.
 # ============================================================================
 [autoscaling]
-    enabled = false                          # Включить автомасштабирование
-    min_nodes = 1                            # Минимум узлов
-    max_nodes = 10                           # Максимум узлов
-    scale_up_threshold = 0.75                # Порог для увеличения (0-1)
-    scale_down_threshold = 0.30              # Порог для уменьшения (0-1)
-    scale_up_cooldown_sec = 300              # Cooldown после увеличения (сек)
-    scale_down_cooldown_sec = 600            # Cooldown после уменьшения (сек)
-    evaluation_interval_sec = 30             # Интервал оценки (сек)
-    predictive_enabled = true                # Прогнозирование нагрузки
-    max_scale_up_nodes = 3                   # Макс. узлов за одно увеличение
-    max_scale_down_nodes = 2                 # Макс. узлов за одно уменьшение
+    enabled = false                          # Enable autoscaling
+    min_nodes = 1                            # Minimum number of nodes
+    max_nodes = 10                           # Maximum number of nodes
+    scale_up_threshold = 0.75                # Scale-up threshold (0-1)
+    scale_down_threshold = 0.30              # Scale-down threshold (0-1)
+    scale_up_cooldown_sec = 300              # Cooldown after scale-up (sec)
+    scale_down_cooldown_sec = 600            # Cooldown after scale-down (sec)
+    evaluation_interval_sec = 30             # Evaluation interval (sec)
+    predictive_enabled = true                # Predictive load scaling
+    max_scale_up_nodes = 3                   # Maximum nodes per single scale-up
+    max_scale_down_nodes = 2                 # Maximum nodes per single scale-down
 
 # ============================================================================
-# [schema_migration] - НАСТРОЙКИ МИГРАЦИИ СХЕМЫ
+# [schema_migration] - SCHEMA MIGRATION SETTINGS
 # ============================================================================
-# Автоматическое обновление схемы данных при обновлении версии.
+# Automatic data schema upgrade on version change.
 # ============================================================================
 [schema_migration]
-    enabled = true                           # Включить миграции
-    migration_dir = "migrations"             # Директория с миграциями
-    auto_migrate = true                      # Автоматическая миграция при старте
-    target_version = "2.1.0"                 # Целевая версия схемы
+    enabled = true                           # Enable migrations
+    migration_dir = "migrations"             # Migrations directory
+    auto_migrate = true                      # Automatic migration on startup
+    target_version = "2.1.0"                 # Target schema version
 
 # ============================================================================
-# [backup] - НАСТРОЙКИ БЭКАПОВ
+# [backup] - BACKUP SETTINGS
 # ============================================================================
-# Планировщик резервного копирования данных.
+# Data backup scheduler.
 # ============================================================================
 [backup]
-    enabled = true                           # Включить планировщик бэкапов
-    backup_dir = "backups"                   # Директория для бэкапов
-    max_concurrent = 1                       # Макс. одновременных бэкапов
-    compress_enabled = true                  # Сжатие бэкапов
-    retention_days = 7                       # Дни хранения бэкапов
+    enabled = true                           # Enable the backup scheduler
+    backup_dir = "backups"                   # Directory for backups
+    max_concurrent = 1                       # Maximum concurrent backups
+    compress_enabled = true                  # Backup compression
+    retention_days = 7                       # Backup retention (days)
     
  # =============================================================================
 # CROSS-DATACENTER MIGRATION CONFIGURATION
@@ -465,7 +465,7 @@
         max_errors = 100
 
 [metrics]
-# Включить экспорт метрик в формате Prometheus
+# Enable Prometheus-format metrics export
 enabled = true
-# Интервал сбора метрик в секундах
+# Metrics collection interval in seconds
 collect_interval_sec = 15
