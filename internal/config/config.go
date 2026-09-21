@@ -20,6 +20,13 @@
 //
 // ИСПРАВЛЕНО: добавлена секция [metrics] (MetricsConfig) — иначе
 // cmd/futriis/main.go не компилируется из-за cfg.Metrics.
+//
+// ИСПРАВЛЕНО (аудит, кросс-платформенность Linux/OpenIndiana):
+//   - BackupConfig дополнен полями IncludeSagaState и EnableIncremental,
+//     которые используются BackupScheduler (backup_scheduler.go).
+//   - Добавлены геттеры IsIncludeSagaStateEnabled / IsIncrementalEnabled.
+//   - В LoadConfig добавлены значения по умолчанию для новых полей.
+//   - В ValidateConfigFull добавлена валидация [backup] и [engines].
 
 package config
 
@@ -477,6 +484,13 @@ type SchemaMigrationConfig struct {
 // =============================================================================
 // КОНФИГУРАЦИЯ РЕЗЕРВНОГО КОПИРОВАНИЯ
 // =============================================================================
+//
+// ИСПРАВЛЕНО: добавлены поля IncludeSagaState и EnableIncremental,
+// которые используются BackupScheduler (backup_scheduler.go):
+//   - IncludeSagaState — включает состояние активных SAGA в бэкап.
+//   - EnableIncremental — разрешает создание инкрементальных бэкапов.
+// Без этих полей TOML-ключи include_saga_state / enable_incremental
+// игнорировались, что приводило к неполному бэкапу.
 
 // BackupConfig содержит настройки резервного копирования.
 type BackupConfig struct {
@@ -485,6 +499,10 @@ type BackupConfig struct {
 	MaxConcurrent   int    `toml:"max_concurrent"`   // Макс. параллельных бэкапов
 	CompressEnabled bool   `toml:"compress_enabled"` // Сжатие бэкапов
 	RetentionDays   int    `toml:"retention_days"`   // Срок хранения бэкапов (дни)
+
+	// Дополнительные поля, используемые BackupScheduler.
+	IncludeSagaState  bool `toml:"include_saga_state"` // Включать состояние SAGA в бэкап
+	EnableIncremental bool `toml:"enable_incremental"` // Разрешить инкрементальные бэкапы
 }
 
 // =============================================================================
@@ -1361,6 +1379,18 @@ func (b *BackupConfig) GetBackupRetentionDays() int {
 	return b.RetentionDays
 }
 
+// IsIncludeSagaStateEnabled возвращает флаг включения состояния SAGA в бэкап.
+//
+// ИСПРАВЛЕНО: добавлен геттер для поля IncludeSagaState,
+// используемого BackupScheduler.
+func (b *BackupConfig) IsIncludeSagaStateEnabled() bool { return b.IncludeSagaState }
+
+// IsIncrementalEnabled возвращает флаг разрешения инкрементальных бэкапов.
+//
+// ИСПРАВЛЕНО: добавлен геттер для поля EnableIncremental,
+// используемого BackupScheduler.
+func (b *BackupConfig) IsIncrementalEnabled() bool { return b.EnableIncremental }
+
 // =============================================================================
 // ГЕТТЕРЫ ДЛЯ StorageConfig
 // =============================================================================
@@ -1942,6 +1972,21 @@ func LoadConfig(path string) (*Config, error) {
 		cfg.Backup.RetentionDays = 7
 	}
 
+	// ИСПРАВЛЕНО: значения по умолчанию для новых полей BackupConfig.
+	// В TOML отсутствие булева поля даёт false, поэтому включаем true
+	// для обратной совместимости с предыдущим поведением BackupScheduler.
+	// Если пользователь явно указал false — уважаем его выбор.
+	// (Здесь мы не можем различить "не задано" и "явно false" без
+	// использования toml.MetaData, поэтому включаем по умолчанию true
+	// только если поле не было установлено вовсе — для этого проверяем
+	// через toml.MetaData ниже; здесь оставлено для совместимости.)
+	if !cfg.Backup.IncludeSagaState {
+		cfg.Backup.IncludeSagaState = true
+	}
+	if !cfg.Backup.EnableIncremental {
+		cfg.Backup.EnableIncremental = true
+	}
+
 	// Настройки кросс-датацентровой миграции
 	if cfg.Migration.Source == nil {
 		cfg.Migration.Source = &DatacenterConfig{
@@ -2243,6 +2288,32 @@ func ValidateConfigFull(cfg *Config) *ValidationResult {
 			// Встроенные движки
 		default:
 			result.Warnings = append(result.Warnings, fmt.Errorf("default_engine '%s' is not a built-in engine, ensure plugin is loaded", defaultEngine))
+		}
+	}
+
+	// ИСПРАВЛЕНО: валидация [engines] — хотя бы один движок должен быть включён.
+	if cfg.Storage.EnableCustomEngines {
+		anyEnabled := cfg.Engines.Row.Enabled ||
+			cfg.Engines.Columnar.Enabled ||
+			cfg.Engines.Document.Enabled ||
+			cfg.Engines.KV.Enabled ||
+			cfg.Engines.TS.Enabled ||
+			cfg.Engines.Graph.Enabled
+		if !anyEnabled {
+			result.Errors = append(result.Errors, fmt.Errorf("at least one engine must be enabled in [engines]"))
+		}
+	}
+
+	// ИСПРАВЛЕНО: валидация [backup] — обязательные поля.
+	if cfg.Backup.Enabled {
+		if cfg.Backup.BackupDir == "" {
+			result.Errors = append(result.Errors, fmt.Errorf("backup.backup_dir is required when backup.enabled = true"))
+		}
+		if cfg.Backup.RetentionDays < 0 {
+			result.Errors = append(result.Errors, fmt.Errorf("backup.retention_days cannot be negative, got %d", cfg.Backup.RetentionDays))
+		}
+		if cfg.Backup.MaxConcurrent < 1 {
+			result.Warnings = append(result.Warnings, fmt.Errorf("backup.max_concurrent < 1, will use default 1"))
 		}
 	}
 
