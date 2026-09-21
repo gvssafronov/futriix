@@ -13,9 +13,13 @@
 // Поддерживает CRUD операции, управление индексами, ACL и ограничениями.
 // Реализован с минимальными блокировками, использует wait-free структуры.
 //
-// ИСПРАВЛЕНО: добавлено поле metricsCollector и метод SetMetricsCollector,
-// а также регистрация /metrics (Prometheus text exposition) и /-/healthy.
-// Это устраняет ошибку "httpServer.SetMetricsCollector undefined" в main.go.
+// ИСПРАВЛЕНО:
+//   - добавлено поле metricsCollector и метод SetMetricsCollector;
+//   - регистрация /metrics (Prometheus text exposition) и /-/healthy;
+//   - ДОБАВЛЕНО: поддержка TLS на самом HTTP-сервере futriiX.
+//     Конструктор NewHTTPServerWithTLS принимает certFile/keyFile,
+//     Start() вызывает ListenAndServeTLS при включённом TLS.
+//     Старый NewHTTPServer оставлен как обёртка для обратной совместимости.
 
 package api
 
@@ -33,6 +37,7 @@ import (
 
     "futriis/internal/acl"
     "futriis/internal/cluster"
+    "futriis/internal/config"
     "futriis/internal/log"
     "futriis/internal/metrics"
     "futriis/internal/storage"
@@ -249,6 +254,11 @@ type HTTPServer struct {
     sessions         sync.Map
     // ИСПРАВЛЕНО: коллектор метрик (может быть nil, если выключен).
     metricsCollector *metrics.Collector
+
+    // ДОБАВЛЕНО: параметры TLS для самого HTTP-сервера.
+    tlsEnabled bool
+    certFile   string
+    keyFile    string
 }
 
 // APIResponse представляет стандартный ответ API
@@ -258,8 +268,27 @@ type APIResponse struct {
     Error   string      `json:"error,omitempty"`
 }
 
-// NewHTTPServer создаёт новый HTTP сервер
+// NewHTTPServer — обёртка для обратной совместимости.
+// Использует NewHTTPServerWithTLS с пустым TLS-конфигом (HTTP).
 func NewHTTPServer(port int, store *storage.Storage, coord *cluster.RaftCoordinator, aclMgr *acl.ACLManager, logger *log.Logger) *HTTPServer {
+    return NewHTTPServerWithTLS(port, store, coord, aclMgr, logger, nil)
+}
+
+// NewHTTPServerWithTLS — основной конструктор HTTP-сервера.
+//
+// ДОБАВЛЕНО: если secCfg != nil и secCfg.IsTLSEnabled() == true,
+// сервер будет слушать HTTPS и использовать указанные cert/key файлы.
+// Если TLS включён, но cert_file/key_file пустые — TLS отключается,
+// в лог пишется предупреждение, сервер поднимается как HTTP (fail-soft,
+// чтобы не уронить процесс из-за опечатки в конфиге).
+func NewHTTPServerWithTLS(
+    port int,
+    store *storage.Storage,
+    coord *cluster.RaftCoordinator,
+    aclMgr *acl.ACLManager,
+    logger *log.Logger,
+    secCfg *config.SecurityConfig,
+) *HTTPServer {
     s := &HTTPServer{
         store:       store,
         coordinator: coord,
@@ -267,6 +296,25 @@ func NewHTTPServer(port int, store *storage.Storage, coord *cluster.RaftCoordina
         logger:      logger,
         port:        port,
         rateLimiter: NewRateLimiterHTTP(DefaultRateLimiterConfigHTTP()),
+    }
+
+    // ДОБАВЛЕНО: разбор TLS-конфига.
+    if secCfg != nil && secCfg.IsTLSEnabled() {
+        s.tlsEnabled = true
+        s.certFile = secCfg.GetCertFile()
+        s.keyFile = secCfg.GetKeyFile()
+
+        if s.certFile == "" || s.keyFile == "" {
+            if s.logger != nil {
+                s.logger.Warn("TLS enabled but cert_file/key_file is empty — falling back to HTTP")
+            }
+            s.tlsEnabled = false
+        } else if s.logger != nil {
+            s.logger.Info(fmt.Sprintf("TLS enabled for HTTP API (cert=%s, min_version=%s)",
+                s.certFile, secCfg.GetTLSMinVersion()))
+        }
+    } else if s.logger != nil {
+        s.logger.Info("HTTP API running without TLS (plain HTTP)")
     }
 
     mux := http.NewServeMux()
@@ -338,14 +386,22 @@ func NewHTTPServer(port int, store *storage.Storage, coord *cluster.RaftCoordina
 }
 
 // SetMetricsCollector устанавливает коллектор метрик.
-// ИСПРАВЛЕНО: метод, который ожидает cmd/futriis/main.go.
 func (s *HTTPServer) SetMetricsCollector(c *metrics.Collector) {
     s.metricsCollector = c
 }
 
-// Start запускает HTTP сервер
+// Start запускает HTTP сервер.
+// ДОБАВЛЕНО: если TLS включён — ListenAndServeTLS(certFile, keyFile).
 func (s *HTTPServer) Start() error {
-    s.logger.Info("Starting HTTP API server on port " + strconv.Itoa(s.port))
+    scheme := "http"
+    if s.tlsEnabled {
+        scheme = "https"
+    }
+    s.logger.Info(fmt.Sprintf("Starting HTTP API server on %s://0.0.0.0:%d", scheme, s.port))
+
+    if s.tlsEnabled {
+        return s.server.ListenAndServeTLS(s.certFile, s.keyFile)
+    }
     return s.server.ListenAndServe()
 }
 
@@ -353,6 +409,12 @@ func (s *HTTPServer) Start() error {
 func (s *HTTPServer) Stop() error {
     s.rateLimiter.Stop()
     return s.server.Close()
+}
+
+// IsTLSEnabled сообщает, работает ли сервер по HTTPS.
+// ДОБАВЛЕНО: удобно для диагностики и логирования в main.go.
+func (s *HTTPServer) IsTLSEnabled() bool {
+    return s.tlsEnabled
 }
 
 // GetRateLimiterStats возвращает статистику rate limiter'а
@@ -368,8 +430,6 @@ func (s *HTTPServer) handlePromHealthy(w http.ResponseWriter, r *http.Request) {
 }
 
 // handlePromMetrics — Prometheus text exposition endpoint.
-// Если коллектор не установлен, отдаём только process-метрики
-// (futriis_up, futriis_uptime_seconds) через DefaultRegistry.
 func (s *HTTPServer) handlePromMetrics(w http.ResponseWriter, r *http.Request) {
     w.Header().Set("Content-Type", "text/plain; version=0.0.4; charset=utf-8")
     w.WriteHeader(http.StatusOK)
@@ -1686,6 +1746,7 @@ func (s *HTTPServer) handleHealthCheck(w http.ResponseWriter, r *http.Request) {
         "status":    status,
         "timestamp": time.Now().UnixMilli(),
         "version":   "1.0.0",
+        "tls":       s.tlsEnabled,
     })
 }
 
@@ -1697,6 +1758,7 @@ func (s *HTTPServer) handleMetricsEndpoint(w http.ResponseWriter, r *http.Reques
         "timestamp":    time.Now().UnixMilli(),
         "rate_limiter": s.rateLimiter.GetStats(),
         "store_stats":  s.store.GetStats(),
+        "tls_enabled":  s.tlsEnabled,
     }
 
     if s.coordinator != nil {
